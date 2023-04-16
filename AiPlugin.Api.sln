@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33110.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AiPlugin.Api", "AiPlugin.Api\AiPlugin.Api.csproj", "{00055938-F310-4459-AF59-694E6B03D5F4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{00055938-F310-4459-AF59-694E6B03D5F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{00055938-F310-4459-AF59-694E6B03D5F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{00055938-F310-4459-AF59-694E6B03D5F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{00055938-F310-4459-AF59-694E6B03D5F4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C2D4A417-C059-4946-90D6-7FA6D46A718A}
+	EndGlobalSection
+EndGlobal
