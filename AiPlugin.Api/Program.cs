@@ -7,6 +7,14 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+//add cors for https://aiplugin-api.azurewebsites.net
+builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("CorsPolicy",
+            builder => builder
+                .WithOrigins("https://aiplugin-api.azurewebsites.net"));
+    });
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -21,5 +29,7 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 
 app.MapControllers();
+
+app.UseCors("CorsPolicy"); 
 
 app.Run();
