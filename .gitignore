@@ -333,3 +333,4 @@ ASALocalRun/
 /AiPlugin.Api/Properties/ServiceDependencies/aiplugin-api - Zip Deploy/profile.arm.json
 /.vs/AiPlugin.Api/v17/.suo
 /AiPlugin.Api/AiPlugin.Api.csproj.user
+/Api/appsettings.Development.json

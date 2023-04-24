@@ -1,16 +1,20 @@
 {
   "dependencies": {
     "secrets1": {
-      "secretStore": null,
-      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.KeyVault/vaults/AiPluginVault",
-      "type": "secrets.keyVault",
-      "connectionId": "VaultUri"
+      "type": "secrets.user"
     },
     "mssql1": {
-      "secretStore": "AzureKeyVault",
+      "secretStore": "LocalSecretsFile",
       "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/aipluginapp/databases/AIPlugins",
       "type": "mssql.azure",
       "connectionId": "ConnectionStrings:aiplugin"
+    },
+    "secrets2": {
+      "secretStore": null,
+      "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.KeyVault/vaults/AiPluginVault",
+      "type": "secrets.keyVault",
+      "connectionId": "VaultUri",
+      "dynamicId": null
     }
   }
 }
