@@ -1,5 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
+using AiPlugin.Application.models.CompletitonPrompt;
+using AiPlugin.Application.OpenAi.Models;
 using AiPlugin.Domain;
 using AiPlugin.Infrastructure;
 using Microsoft.Extensions.Configuration;
@@ -130,15 +132,29 @@ public class PluginRepository : IPluginRepository
     }
 
     // todo move in dedicated repo
+    public static class Davinci3 /*: IAIModel */
+    {
+        public const int MaxTokens = 4097;
+        public const double TokenToCharConversionRate = 3.5; //this is essential, it variates between 3 and 5
+        public const int AproximateMaxChars = (int)(MaxTokens * TokenToCharConversionRate);
+    }
+
+    public const int moreOrLessTheBasePromptLenght = 1256;
     private async Task<GPTPlugin> AskGPT(string prompt)
     {
+        //im trying to estimate if the prompt plus response (a fifth of the request) will overflow the max token
+        if ((prompt.Length + prompt.Length / 5) > Davinci3.AproximateMaxChars)
+        {
+            throw new InvalidOperationException("Prompt overflow");
+        }
+
         // Build the request body
         var requestBody = new
         {
-            model = prompt.Length > 2000 ? "gpt-4-32k" : "gpt-4",
+            model = "text-davinci-003",//prompt.Length > 2000 ? "gpt-4-32k" : "gpt-4",
             prompt = prompt,
             temperature = gPTSettings.temperature,
-            max_tokens = gPTSettings.max_tokens,
+            max_tokens = (int)((Davinci3.AproximateMaxChars - prompt.Length) / Davinci3.TokenToCharConversionRate), //gPTSettings.max_tokens, //todo gotta have something like a dictionary with model as key and maxTokens as 
             n = gPTSettings.n
         };
 
@@ -158,7 +174,11 @@ public class PluginRepository : IPluginRepository
         var response = await _httpClient.SendAsync(request);
 
         // Read the response content to GPTPlugin
-        return JsonSerializer.Deserialize<GPTPlugin>(await response.Content.ReadAsStringAsync())!;
+        //var content = await response.Content.ReadAsStringAsync();
+
+        var completitionResponse = await JsonSerializer.DeserializeAsync<CompletationResponse>(response.Content.ReadAsStream());
+
+        return JsonSerializer.Deserialize<GPTPlugin>(completitionResponse.choices[0].text);
     }
 
     public async Task<Plugin> GetPlugin(Guid userId, Guid pluginId)
@@ -197,24 +217,24 @@ public class PluginRepository : IPluginRepository
         return sections;
     }
 
+    public const int splitAt = 4000;
+
     private IEnumerable<string> SplitSection(string content)
     {
-        // simply split at 80K chars
-        return Enumerable.Range(0, content.Length / 80000)
-            .Select(i => content.Substring(i * 80000, 80000));
+        var sectionsContent = new List<string>();
+        var currentSectionContent = "";
+        for (int i = 0; i < content.Length; i++)
+        {
+            currentSectionContent += content[i];
+            if (i % splitAt == 0 && i > 0)
+            {
+                sectionsContent.Add(currentSectionContent);
+                currentSectionContent = "";
+            }
+        }
+        sectionsContent.Add(currentSectionContent);
+        return sectionsContent;
 
     }
     #endregion
-}
-public class GPTAPI
-{
-    public string Name { get; set; }
-    public string Description { get; set; }
-}
-
-public class GPTPlugin
-{
-    public string Name { get; set; }
-    public string Description { get; set; }
-    public List<GPTAPI> Apis { get; set; }
 }

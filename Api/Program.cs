@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 
 using AiPlugin.Application;
+using AiPlugin.Application.OpenAi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
