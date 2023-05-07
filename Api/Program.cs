@@ -1,3 +1,4 @@
+using System.Reflection;
 using Azure.Identity;
 using AutoMapper;
 using AiPlugin.Infrastructure;
@@ -20,7 +21,13 @@ builder.Services.AddSingleton(gPTSettings);
 builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+var version = "1.1";
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc(version, new() { Title = "AiPlugin API", Version = version });
+});
+
 builder.Services.AddScoped<IBaseRepository<Plugin>, AiPlugin.Application.Plugins.PluginRepository>();
 
 // add database
@@ -35,7 +42,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint($"/swagger/{version}/swagger.json", $"AiPlugin API {version}");
+    });
 }
 
 app.UseHttpsRedirection();
