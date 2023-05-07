@@ -58,12 +58,13 @@ namespace AiPlugin.Api.Controllers
         #region Plugin CRUD
         // Post {userId}/plugin DONE
         // Post {userId}/{pluginId}/section DONE
+        // Get {userId}/plugins
         // Get {userId}/{pluginId} DONE
         // Get {userId}/{pluginId}/{sectionId} DONE
         // Put {userId}/{pluginId} DONE
         // Put {userId}/{pluginId}/{sectionId} DONE
-        // Delete {userId}/{pluginId}
-        // Delete {userId}/{pluginId}/{sectionId}
+        // Delete {userId}/{pluginId} 
+        // Delete {userId}/{pluginId}/{sectionId} DONE
 
         // Create plugin
         [HttpPost("{userId}/plugin")]
@@ -88,6 +89,8 @@ namespace AiPlugin.Api.Controllers
             await pluginRepository.Update(plugin);
             return CreatedAtAction(nameof(GetAction), new { userId, pluginId, sectionId = section.Id }, section);
         }
+
+
 
         // Get plugin
         [HttpGet("{userId}/{pluginId}")]

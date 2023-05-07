@@ -18,6 +18,11 @@ public class PluginRepository : IBaseRepository<Plugin>
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
     }
+    
+    public async Task<IEnumerable<Plugin>> Get(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Plugins.Where(x => !x.isDeleted).ToListAsync(cancellationToken);
+    }
 
     public async Task<Plugin> Get(Guid id, CancellationToken cancellationToken = default)
     {
@@ -44,4 +49,5 @@ public class PluginRepository : IBaseRepository<Plugin>
         dbContext.Plugins.Update(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
 }
