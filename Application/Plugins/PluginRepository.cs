@@ -18,10 +18,13 @@ public class PluginRepository : IBaseRepository<Plugin>
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
     }
-    
-    public async Task<IEnumerable<Plugin>> Get(CancellationToken cancellationToken = default)
+
+    public IQueryable<Plugin> Get(CancellationToken cancellationToken = default)
     {
-        return await dbContext.Plugins.Where(x => !x.isDeleted).ToListAsync(cancellationToken);
+        return dbContext
+            .Plugins
+            .Include(x => x.Sections)
+            .Where(x => !x.isDeleted).AsQueryable();
     }
 
     public async Task<Plugin> Get(Guid id, CancellationToken cancellationToken = default)

@@ -6,6 +6,7 @@ using AiPlugin.Domain;
 using AiPlugin.Application.Old;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Api.Dto;
+using Microsoft.EntityFrameworkCore;
 
 namespace AiPlugin.Api.Controllers
 {
@@ -70,6 +71,7 @@ namespace AiPlugin.Api.Controllers
         [HttpPost("{userId}/plugin")]
         public async Task<ActionResult<Plugin>> CreatePlugin(Guid userId, [FromBody] PluginCreateRequest request)
         {
+            await Task.Delay(millisecondsDelay);
             var plugin = mapper.Map<Plugin>(request);
             plugin.UserId = userId;
             var createdPlugin = await pluginRepository.Add(plugin);
@@ -80,6 +82,7 @@ namespace AiPlugin.Api.Controllers
         [HttpPost("{userId}/{pluginId}/section")]
         public async Task<ActionResult<Section>> CreateSection(Guid userId, Guid pluginId, [FromBody] SectionCreateRequest request)
         {
+            await Task.Delay(millisecondsDelay);
             var plugin = await pluginRepository.Get(pluginId);
             if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -90,12 +93,24 @@ namespace AiPlugin.Api.Controllers
             return CreatedAtAction(nameof(GetAction), new { userId, pluginId, sectionId = section.Id }, section);
         }
 
-
+        // Get plugins
+        [HttpGet("{userId}/plugins")]
+        public async Task<ActionResult<IEnumerable<Plugin>>> GetPlugins(Guid userId)
+        {
+            await Task.Delay(millisecondsDelay);
+            var plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
+            foreach (var plugin in plugins)
+            {
+                plugin.Sections = plugin.Sections?.Where(s => s.isDeleted == false).ToList();
+            }
+            return Ok(plugins);
+        }
 
         // Get plugin
         [HttpGet("{userId}/{pluginId}")]
         public async Task<ActionResult<Plugin>> GetPlugin(Guid userId, Guid pluginId)
         {
+            await Task.Delay(millisecondsDelay);
             var plugin = await pluginRepository.Get(pluginId);
             if (plugin == null || plugin.UserId != userId) return BadRequest();
             return Ok(plugin);
@@ -131,6 +146,7 @@ namespace AiPlugin.Api.Controllers
         [HttpPut("{userId}/{pluginId}")]
         public async Task<ActionResult> UpdatePlugin(Guid userId, Guid pluginId, [FromBody] PluginUpdateRequest request)
         {
+            await Task.Delay(millisecondsDelay);
             var plugin = await pluginRepository.Get(pluginId);
             if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -144,6 +160,7 @@ namespace AiPlugin.Api.Controllers
         [HttpPut("{userId}/{pluginId}/{sectionId}")]
         public async Task<ActionResult> UpdateSection(Guid userId, Guid pluginId, Guid sectionId, [FromBody] SectionUpdateRequest request)
         {
+            await Task.Delay(millisecondsDelay);
             var plugin = await pluginRepository.Get(pluginId);
             if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -160,6 +177,7 @@ namespace AiPlugin.Api.Controllers
         [HttpDelete("{userId}/{pluginId}")]
         public async Task<ActionResult> DeletePlugin(Guid userId, Guid pluginId)
         {
+            await Task.Delay(millisecondsDelay);
             var plugin = await pluginRepository.Get(pluginId);
             if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -171,6 +189,8 @@ namespace AiPlugin.Api.Controllers
         [HttpDelete("{userId}/{pluginId}/{sectionId}")]
         public async Task<ActionResult> DeleteSection(Guid userId, Guid pluginId, Guid sectionId)
         {
+            await Task.Delay(millisecondsDelay);
+
             var plugin = await pluginRepository.Get(pluginId);
             if (plugin == null || plugin.UserId != userId) return BadRequest();
 
