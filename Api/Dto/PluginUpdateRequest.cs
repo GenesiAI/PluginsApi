@@ -1,11 +1,8 @@
-namespace AiPlugin.Domain
+namespace AiPlugin.Api.Dto
 {
-    //a plugin is owned by a user, plugins are made of sections
-    public class Plugin : EntityBase, IDeleted
+    public class PluginUpdateRequest
     {
-        public Guid UserId { get; set; }
-        public virtual IEnumerable<Section>? Sections { get; set; } = null!;
-        // public string SchemaVersion { get; set; } = null!;
+        public string OriginalText { get; set; } = null!;
         public string NameForHuman { get; set; } = null!;
         public string NameForModel { get; set; } = null!;
         public string DescriptionForHuman { get; set; } = null!;
@@ -13,6 +10,6 @@ namespace AiPlugin.Domain
         public string LogoUrl { get; set; } = null!;
         public string ContactEmail { get; set; } = null!;
         public string LegalInfoUrl { get; set; } = null!;
-        public bool isDeleted { get; set; }
     }
+
 }

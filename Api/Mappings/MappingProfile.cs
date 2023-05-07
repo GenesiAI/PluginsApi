@@ -2,6 +2,7 @@
 using AiPlugin.Domain;
 using Microsoft.OpenApi.Models;
 using AiPlugin.Domain.Manifest;
+using AiPlugin.Api.Dto;
 
 public class MappingProfile : Profile
 {
@@ -34,5 +35,11 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.LegalInfoUrl, opt => opt.MapFrom(src => src.LegalInfoUrl))
             // .ForMember(dest => dest.Api, opt => opt.MapFrom(src => src.Sections))
             ;
+
+
+        CreateMap<PluginCreateRequest, Plugin>();
+        CreateMap<PluginUpdateRequest, Plugin>();
+        CreateMap<SectionCreateRequest, Section>();
+        CreateMap<SectionUpdateRequest, Section>();
     }
 }

@@ -1,6 +1,6 @@
 ﻿using AiPlugin.Domain;
 
-namespace AiPlugin.Application
+namespace AiPlugin.Application.Old
 {
     public interface IPluginRepository
     {

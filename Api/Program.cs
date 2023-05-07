@@ -2,10 +2,10 @@ using Azure.Identity;
 using AutoMapper;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-
-
-using AiPlugin.Application;
-using AiPlugin.Application.OpenAi.Models;
+using AiPlugin.Application.Old.OpenAi.Models;
+using AiPlugin.Application.Old;
+using AiPlugin.Application.Plugins;
+using AiPlugin.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,7 +21,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddScoped<IPluginRepository, PluginRepository>();
+builder.Services.AddScoped<IBaseRepository<Plugin>, AiPlugin.Application.Plugins.PluginRepository>();
 
 // add database
 builder.Services.AddDbContext<AiPluginDbContext>(options =>

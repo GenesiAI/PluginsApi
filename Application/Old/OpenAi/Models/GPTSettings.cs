@@ -1,4 +1,4 @@
-namespace AiPlugin.Application.OpenAi.Models;
+namespace AiPlugin.Application.Old.OpenAi.Models;
 
 public class GPTSettings
 {

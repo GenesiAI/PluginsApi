@@ -1,12 +1,12 @@
 ﻿using System.Text;
 using System.Text.Json;
-using AiPlugin.Application.models.CompletitonPrompt;
-using AiPlugin.Application.OpenAi.Models;
+using AiPlugin.Application.Old.Models.CompletitonPrompt;
+using AiPlugin.Application.Old.OpenAi.Models;
 using AiPlugin.Domain;
 using AiPlugin.Infrastructure;
 using Microsoft.Extensions.Configuration;
 
-namespace AiPlugin.Application;
+namespace AiPlugin.Application.Old;
 public class PluginRepository : IPluginRepository
 {
     private readonly AiPluginDbContext dbContext;
@@ -90,7 +90,7 @@ public class PluginRepository : IPluginRepository
         var plugin = new Plugin
         {
             UserId = userId,
-            OriginalText = content,
+            //OriginalText = content,
             Sections = sections,
             // SchemaVersion = "1.0",
             NameForHuman = pluginGPT.Name,
@@ -143,7 +143,7 @@ public class PluginRepository : IPluginRepository
     private async Task<GPTPlugin> AskGPT(string prompt)
     {
         //im trying to estimate if the prompt plus response (a fifth of the request) will overflow the max token
-        if ((prompt.Length + prompt.Length / 5) > Davinci3.AproximateMaxChars)
+        if (prompt.Length + prompt.Length / 5 > Davinci3.AproximateMaxChars)
         {
             throw new InvalidOperationException("Prompt overflow");
         }
@@ -152,10 +152,10 @@ public class PluginRepository : IPluginRepository
         var requestBody = new
         {
             model = "text-davinci-003",//prompt.Length > 2000 ? "gpt-4-32k" : "gpt-4",
-            prompt = prompt,
-            temperature = gPTSettings.temperature,
+            prompt,
+            gPTSettings.temperature,
             max_tokens = (int)((Davinci3.AproximateMaxChars - prompt.Length) / Davinci3.TokenToCharConversionRate), //gPTSettings.max_tokens, //todo gotta have something like a dictionary with model as key and maxTokens as 
-            n = gPTSettings.n
+            gPTSettings.n
         };
 
         // Serialize the request body to a JSON string
@@ -200,22 +200,22 @@ public class PluginRepository : IPluginRepository
     #region private methods
 
     //temporarily code, TODO soon to use AI to describe the sections and maybe do the splitting too 
-    private async Task<IEnumerable<Section>> DescribeSections(IEnumerable<string> sectionsContent)
-    {
-        var sections = new List<Section>();
-        foreach (var sectionContent in sectionsContent)
-        {
-            var section = new Section
-            {
-                Name = "Section " + sections.Count,
-                // Description = "Description of section " + sections.Count,
-                Content = sectionContent
-            };
-            sections.Add(section);
-        }
+    //private async Task<IEnumerable<Section>> DescribeSections(IEnumerable<string> sectionsContent)
+    //{
+    //    var sections = new List<Section>();
+    //    foreach (var sectionContent in sectionsContent)
+    //    {
+    //        var section = new Section
+    //        {
+    //            Name = "Section " + sections.Count,
+    //            // Description = "Description of section " + sections.Count,
+    //            Content = sectionContent
+    //        };
+    //        sections.Add(section);
+    //    }
 
-        return sections;
-    }
+    //    return sections;
+    //}
 
     public const int splitAt = 4000;
 

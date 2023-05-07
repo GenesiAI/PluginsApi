@@ -1,4 +1,4 @@
-namespace AiPlugin.Application.models.CompletitonPrompt;
+namespace AiPlugin.Application.Old.Models.CompletitonPrompt;
 
 public class GPTPlugin
 {
