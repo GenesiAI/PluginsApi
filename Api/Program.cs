@@ -22,7 +22,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-var version = "1.1";
+var version = "1.1.1";
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc(version, new() { Title = "AiPlugin API", Version = version });

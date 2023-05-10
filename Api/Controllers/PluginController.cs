@@ -57,15 +57,6 @@ namespace AiPlugin.Api.Controllers
         }
 
         #region Plugin CRUD
-        // Post {userId}/plugin DONE
-        // Post {userId}/{pluginId}/section DONE
-        // Get {userId}/plugins
-        // Get {userId}/{pluginId} DONE
-        // Get {userId}/{pluginId}/{sectionId} DONE
-        // Put {userId}/{pluginId} DONE
-        // Put {userId}/{pluginId}/{sectionId} DONE
-        // Delete {userId}/{pluginId} 
-        // Delete {userId}/{pluginId}/{sectionId} DONE
 
         // Create plugin
         [HttpPost("{userId}/plugin")]
@@ -110,7 +101,7 @@ namespace AiPlugin.Api.Controllers
         [HttpGet("{userId}/{pluginId}")]
         public async Task<ActionResult<Plugin>> GetPlugin(Guid userId, Guid pluginId)
         {
-            await Task.Delay(millisecondsDelay);
+            //await Task.Delay(millisecondsDelay);
             var plugin = await pluginRepository.Get(pluginId);
             if (plugin == null || plugin.UserId != userId) return BadRequest();
             return Ok(plugin);
