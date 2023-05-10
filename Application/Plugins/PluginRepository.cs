@@ -48,7 +48,7 @@ public class PluginRepository : IBaseRepository<Plugin>
         var entity = await dbContext.Plugins.FindAsync(id);
         if (entity is null)
             throw new KeyNotFoundException($"Plugin with id {id} not found");
-        entity.isDeleted = false;
+        entity.isDeleted = true;
         dbContext.Plugins.Update(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
