@@ -1,12 +1,8 @@
-using System.Reflection;
-using Azure.Identity;
-using AutoMapper;
-using AiPlugin.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 using AiPlugin.Application.Old.OpenAi.Models;
-using AiPlugin.Application.Old;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
+using AiPlugin.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
