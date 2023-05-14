@@ -1,10 +1,10 @@
-﻿using System.Text;
-using System.Text.Json;
-using AiPlugin.Application.Old.Models.CompletitonPrompt;
+﻿using AiPlugin.Application.Old.Models.CompletitonPrompt;
 using AiPlugin.Application.Old.OpenAi.Models;
 using AiPlugin.Domain;
 using AiPlugin.Infrastructure;
 using Microsoft.Extensions.Configuration;
+using System.Text;
+using System.Text.Json;
 
 namespace AiPlugin.Application.Old;
 public class PluginRepository : IPluginRepository

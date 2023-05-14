@@ -1,8 +1,8 @@
-﻿using AutoMapper;
+﻿using AiPlugin.Api.Dto;
 using AiPlugin.Domain;
-using Microsoft.OpenApi.Models;
 using AiPlugin.Domain.Manifest;
-using AiPlugin.Api.Dto;
+using AutoMapper;
+using Microsoft.OpenApi.Models;
 
 public class MappingProfile : Profile
 {

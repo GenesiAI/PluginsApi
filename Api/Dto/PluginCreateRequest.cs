@@ -1,5 +1,3 @@
-using AiPlugin.Domain;
-
 namespace AiPlugin.Api.Dto
 {
     public class PluginCreateRequest
@@ -12,7 +10,7 @@ namespace AiPlugin.Api.Dto
         public string LogoUrl { get; set; } = null!;
         public string ContactEmail { get; set; } = null!;
         public string LegalInfoUrl { get; set; } = null!;
-        public IEnumerable<SectionCreateRequest>? Sections { get; set; } 
+        public IEnumerable<SectionCreateRequest>? Sections { get; set; }
     }
 
 }
