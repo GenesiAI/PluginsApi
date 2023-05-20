@@ -3,6 +3,7 @@ using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,11 +19,18 @@ builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-var version = "1.1.1";
+var version = "1.2.1"; //subdomain management without userId query param
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc(version, new() { Title = "AiPlugin API", Version = version });
+    options.OperationFilter<OpenApiParameterIgnoreFilter>();
+    options.SwaggerDoc(version, new OpenApiInfo
+    {
+        Title = "Genesi AI Plugin API",
+        Version = version,
+        Description = "API set to get and manage Plugins. routes are intended to be accessed on subdomains in the format {userId}.Genesi.AI. The subdomain is used as the userId."
+    });
 });
+
 
 builder.Services.AddScoped<IBaseRepository<Plugin>, AiPlugin.Application.Plugins.PluginRepository>();
 
