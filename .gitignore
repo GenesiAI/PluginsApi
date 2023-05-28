@@ -334,3 +334,4 @@ ASALocalRun/
 /.vs/AiPlugin.Api/v17/.suo
 /AiPlugin.Api/AiPlugin.Api.csproj.user
 /Api/appsettings.Development.json
+/Api/FirebaseDoNotShareKeys.json

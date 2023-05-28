@@ -3,9 +3,11 @@ using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AiPlugin.Domain.Manifest;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -58,10 +60,13 @@ public class PluginController : ControllerBase
     #region Plugin CRUD
 
     // Create plugin
+    [Authorize]
     [HttpPost("plugin")]
     [UserIdFromSubdomain]
     public async Task<ActionResult<Plugin>> CreatePlugin([FromBody] PluginCreateRequest request, [OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         var plugin = mapper.Map<Plugin>(request);
         plugin.UserId = userId;
         var createdPlugin = await pluginRepository.Add(plugin);
@@ -69,10 +74,13 @@ public class PluginController : ControllerBase
     }
 
     // Create section
+    [Authorize]
     [HttpPost("{pluginId}/section")]
     [UserIdFromSubdomain]
     public async Task<ActionResult<Section>> CreateSection(Guid pluginId, [FromBody] SectionCreateRequest request, [OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         var plugin = await pluginRepository.Get(pluginId);
         if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -84,10 +92,13 @@ public class PluginController : ControllerBase
     }
 
     //Get plugins
+    [Authorize]
     [HttpGet("plugins")]
     [UserIdFromSubdomain]
     public async Task<ActionResult<IEnumerable<Plugin>>> GetPlugins([OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         var plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
         foreach (var plugin in plugins)
         {
@@ -97,20 +108,26 @@ public class PluginController : ControllerBase
     }
 
     // Get plugin
+    [Authorize]
     [HttpGet("{pluginId}")]
     [UserIdFromSubdomain]
     public async Task<ActionResult<Plugin>> GetPlugin(Guid pluginId, [OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         var plugin = await pluginRepository.Get(pluginId);
         if (plugin == null || plugin.UserId != userId) return BadRequest();
         return Ok(plugin);
     }
 
     // Get section
+    [Authorize]
     [HttpGet("{pluginId}/{sectionId}")]
     [UserIdFromSubdomain]
     public async Task<ActionResult<Section>> GetAction(Guid pluginId, Guid sectionId, [OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         await Task.Delay(millisecondsDelay); //in the future we might offer to pay to get faster responses
         var plugin = await pluginRepository.Get(pluginId);
         if (plugin == null)
@@ -134,10 +151,13 @@ public class PluginController : ControllerBase
     }
 
     // Update plugin
+    [Authorize]
     [HttpPut("{pluginId}")]
     [UserIdFromSubdomain]
     public async Task<ActionResult> UpdatePlugin(Guid pluginId, [FromBody] PluginUpdateRequest request, [OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         var plugin = await pluginRepository.Get(pluginId);
         if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -148,10 +168,13 @@ public class PluginController : ControllerBase
     }
 
     // Update section
+    [Authorize]
     [HttpPut("{pluginId}/{sectionId}")]
     [UserIdFromSubdomain]
     public async Task<ActionResult> UpdateSection(Guid pluginId, Guid sectionId, [FromBody] SectionUpdateRequest request, [OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         var plugin = await pluginRepository.Get(pluginId);
         if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -165,10 +188,13 @@ public class PluginController : ControllerBase
     }
 
     // Delete plugin
+    [Authorize]
     [HttpDelete("{pluginId}")]
     [UserIdFromSubdomain]
     public async Task<ActionResult> DeletePlugin(Guid pluginId, [OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         var plugin = await pluginRepository.Get(pluginId);
         if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -177,10 +203,13 @@ public class PluginController : ControllerBase
     }
 
     // Delete section
+    [Authorize]
     [HttpDelete("{pluginId}/{sectionId}")]
     [UserIdFromSubdomain]
     public async Task<ActionResult> DeleteSection(Guid pluginId, Guid sectionId, [OpenApiParameterIgnore] Guid userId)
     {
+        if (!DoesUserIdsMatch(userId)) return Unauthorized();
+
         var plugin = await pluginRepository.Get(pluginId);
         if (plugin == null || plugin.UserId != userId) return BadRequest();
 
@@ -201,4 +230,14 @@ public class PluginController : ControllerBase
 
     #endregion
 
+    private Guid? GetTokenUserId()
+    {
+        var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(id, out Guid guidUserId) ? guidUserId : null;
+    }
+
+    private bool DoesUserIdsMatch(Guid userId)
+    {
+        return GetTokenUserId() == userId;
+    }
 }

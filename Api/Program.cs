@@ -1,12 +1,21 @@
+using AiPlugin.Api.Middlewares;
 using AiPlugin.Application.Old.OpenAi.Models;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AiPlugin.Infrastructure;
+using FirebaseAdmin;
+using Google.Apis.Auth;
+using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.AddConsole();
 //deserialize and inject GPTSettings fron "GPTSettings" section of appsettings.json
 var gPTSettings = builder.Configuration.GetSection("GPTSettings").Get<GPTSettings>()!;
 builder.Services.AddSingleton(gPTSettings);
@@ -19,7 +28,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-var version = "1.2.1"; //subdomain management without userId query param
+var version = "1.2.1"; //subdomain management without GetTokenUserId query param
 builder.Services.AddSwaggerGen(options =>
 {
     options.OperationFilter<OpenApiParameterIgnoreFilter>();
@@ -32,7 +41,23 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
-builder.Services.AddScoped<IBaseRepository<Plugin>, AiPlugin.Application.Plugins.PluginRepository>();
+builder.Services.AddScoped<IBaseRepository<Plugin>, PluginRepository>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+      .AddJwtBearer(options =>
+      {
+          //options.AutomaticAuthenticate = true;
+          options.IncludeErrorDetails = true;
+          options.Authority = "https://securetoken.google.com/genesi-ai";
+          options.TokenValidationParameters = new TokenValidationParameters
+          {
+              ValidateIssuer = true,
+              ValidIssuer = "https://securetoken.google.com/genesi-ai",
+              ValidateAudience = true,
+              ValidAudience = "genesi-ai",
+              ValidateLifetime = true
+          };
+      });
 
 // add database
 builder.Services.AddDbContext<AiPluginDbContext>(options =>
@@ -52,9 +77,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+//app.UseMiddleware<FirebaseAuthenticationMiddleware>();
+
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
+app.UseAuthentication();
+//app.UseAuthorization();
 
 app.MapControllers();
 
