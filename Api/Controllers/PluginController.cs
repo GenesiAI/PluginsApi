@@ -3,6 +3,7 @@ using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AiPlugin.Domain.Manifest;
 using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

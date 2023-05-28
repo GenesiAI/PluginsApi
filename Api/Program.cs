@@ -43,7 +43,7 @@ builder.Services.AddSwaggerGen(options =>
 
 builder.Services.AddScoped<IBaseRepository<Plugin>, PluginRepository>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(options => { options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; })
       .AddJwtBearer(options =>
       {
           //options.AutomaticAuthenticate = true;
@@ -82,7 +82,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
-//app.UseAuthorization();
+app.UseAuthorization();
 
 app.MapControllers();
 
