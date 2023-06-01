@@ -1,17 +1,11 @@
-using AiPlugin.Api.Middlewares;
 using AiPlugin.Application.Old.OpenAi.Models;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AiPlugin.Infrastructure;
-using FirebaseAdmin;
-using Google.Apis.Auth;
-using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +22,18 @@ builder.Services.AddHttpClient();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-var version = "1.2.1"; //subdomain management without GetTokenUserId query param
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "MyDevelopmentPolicy",
+        builder =>
+        {
+            builder.WithOrigins("http://localhost:3000")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+        });
+});
+
+var version = "1.2.2"; //pluginId and admin subdomain management with authenticated users
 builder.Services.AddSwaggerGen(options =>
 {
     options.OperationFilter<OpenApiParameterIgnoreFilter>();
@@ -36,7 +41,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Genesi AI Plugin API",
         Version = version,
-        Description = "API set to get and manage Plugins. routes are intended to be accessed on subdomains in the format {userId}.Genesi.AI. The subdomain is used as the userId."
+        Description = "API set to get and manage Plugins. routes are intended to be accessed on subdomains in the format {pluginId}.Genesi.AI."
     });
 });
 
@@ -75,11 +80,16 @@ if (app.Environment.IsDevelopment())
     {
         options.SwaggerEndpoint($"/swagger/{version}/swagger.json", $"AiPlugin API {version}");
     });
+    app.UseDeveloperExceptionPage();
+    app.UseCors("MyDevelopmentPolicy");
 }
-
-//app.UseMiddleware<FirebaseAuthenticationMiddleware>();
-
-app.UseHttpsRedirection();
+else
+{
+    app.UseExceptionHandler("/Error");
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+app.UseMiddleware<PortalSubdomainRerouterMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

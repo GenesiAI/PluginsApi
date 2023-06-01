@@ -60,7 +60,7 @@ public class PluginRepository : IPluginRepository
     //todo essential features:
 
     /// use chat endpoint !!!!!!!
-    public async Task<Plugin> CreatePlugin(Guid userId, string content)
+    public async Task<Plugin> CreatePlugin(string userId, string content)
     {
 
         //split the content in chunks of 700 chars where a . 
@@ -181,7 +181,7 @@ public class PluginRepository : IPluginRepository
         return JsonSerializer.Deserialize<GPTPlugin>(completitionResponse.choices[0].text);
     }
 
-    public async Task<Plugin> GetPlugin(Guid userId, Guid pluginId)
+    public async Task<Plugin> GetPlugin(string userId, Guid pluginId)
     {
         var plugin = await dbContext.Plugins.FindAsync(pluginId) ?? throw new KeyNotFoundException("Plugin not found");
         if (plugin.UserId != userId)
@@ -189,7 +189,7 @@ public class PluginRepository : IPluginRepository
         return plugin;
     }
 
-    public async Task<Section> GetSection(Guid userId, Guid pluginId, Guid sectionId)
+    public async Task<Section> GetSection(string userId, Guid pluginId, Guid sectionId)
     {
         var section = await dbContext.Sections.FindAsync(sectionId) ?? throw new KeyNotFoundException("Section not found");
         if (section.PluginId != pluginId)

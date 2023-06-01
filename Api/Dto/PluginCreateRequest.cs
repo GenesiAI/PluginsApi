@@ -2,7 +2,7 @@ namespace AiPlugin.Api.Dto
 {
     public class PluginCreateRequest
     {
-        public string OriginalText { get; set; } = null!;
+        //public string OriginalText { get; set; } = null!;
         public string NameForHuman { get; set; } = null!;
         public string NameForModel { get; set; } = null!;
         public string DescriptionForHuman { get; set; } = null!;

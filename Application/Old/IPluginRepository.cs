@@ -4,8 +4,8 @@ namespace AiPlugin.Application.Old
 {
     public interface IPluginRepository
     {
-        Task<Plugin> CreatePlugin(Guid userId, string content);
-        Task<Plugin> GetPlugin(Guid userId, Guid pluginId);
-        Task<Section> GetSection(Guid userId, Guid pluginId, Guid sectionIdc);
+        Task<Plugin> CreatePlugin(string userId, string content);
+        Task<Plugin> GetPlugin(string userId, Guid pluginId);
+        Task<Section> GetSection(string userId, Guid pluginId, Guid sectionIdc);
     }
 }
