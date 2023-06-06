@@ -4,6 +4,7 @@ using AiPlugin.Domain.Manifest;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi.Writers;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -37,12 +38,24 @@ public class PublicPluginController : ControllerBase
 
     [HttpGet("openapi.json")]
     [PlugindFromSubdomain]
-    public async Task<ActionResult<OpenApiDocument>> GetOpenAPISpecification([OpenApiParameterIgnore] Guid pluginId)
+    public async Task<IActionResult> GetOpenAPISpecification([OpenApiParameterIgnore] Guid pluginId)
     {
         try
         {
             var plugin = await pluginRepository.Get(pluginId);
-            return Ok(mapper.Map<Plugin, OpenApiDocument>(plugin));
+            var result = mapper.Map<Plugin, OpenApiDocument>(plugin);
+
+            using (var writer = new StringWriter())
+            {
+                result.SerializeAsV3(new OpenApiJsonWriter(writer));
+
+                return new ContentResult
+                {
+                    Content = writer.ToString(),
+                    ContentType = "application/json",
+                    StatusCode = 200
+                };
+            }
         }
         catch (KeyNotFoundException)
         {
