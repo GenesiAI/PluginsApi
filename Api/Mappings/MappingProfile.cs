@@ -102,7 +102,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Api, opt => opt.MapFrom(src => new Api
             {
                 Type = "openapi",
-                Url = GetPluginUrl(src.Id) + "/swagger.json"
+                Url = GetPluginUrl(src.Id) + "/openapi.json"
             }))
             .ForMember(dest => dest.LogoUrl, opt => opt.MapFrom(src => src.LogoUrl))
             .ForMember(dest => dest.ContactEmail, opt => opt.MapFrom(src => src.ContactEmail))
@@ -116,7 +116,7 @@ public class MappingProfile : Profile
 
     private string GetBaseUrl()
     {
-        return /*env.IsDevelopment() ? "localhost:7210" :*/ "Genesi.AI";
+        return /*env.IsDevelopment() ? "localhost:7210" :*/ "genesi.ai";
     }
     public string GetPluginUrl(Guid pluginId)
     {
