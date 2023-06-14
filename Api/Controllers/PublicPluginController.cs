@@ -5,6 +5,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
+using Newtonsoft.Json.Linq;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -62,6 +63,71 @@ public class PublicPluginController : ControllerBase
             return NotFound();
         }
     }
+
+    /**
+    * Receives a POST request containing an email, name, and message as input.
+    * Validates the email using a standard regular expression (regex).
+    * Sends an HTTP POST request to the specified endpoint with the message payload.
+    * This endpoint does not require user authentication.
+    * Returns a 200 OK status code if the message is successfully sent.
+    * Returns a 400 Bad Request status code if the input data is missing, or the email is invalid.
+    *
+    * @param message The JSON object containing the email, name, and message.
+    * @returns IActionResult indicating the status of the request.
+    */
+    [HttpPost("contact")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Contact([FromBody] JObject message)
+    {
+        if (message == null)
+        {
+            return BadRequest();
+        }
+
+        var email = message.Value<string>("email");
+        var name = message.Value<string>("name");
+        var msg = message.Value<string>("message");
+
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(msg))
+        {
+            return BadRequest();
+        }
+
+        if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$"))
+        {
+            return BadRequest();
+        }
+
+        string signature = Environment.GetEnvironmentVariable("AZURE_LOGIC_CONTACT_EMAIL_SIGNATURE");
+
+        if (string.IsNullOrEmpty(signature))
+        {
+            // Handle the case where the environment variable is not set
+            return BadRequest();
+        }
+
+        var newMessage = new JObject {
+            ["email"] = email,
+            ["name"] = name,
+            ["message"] = msg
+        };
+
+        using (var client = new HttpClient())
+        {
+            var content = new StringContent(newMessage.ToString(), System.Text.Encoding.UTF8, "application/json");
+            var url = "https://prod-250.westeurope.logic.azure.com:443/workflows/884b292e648b4b26beeed8d79e2341cc/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=" + signature;
+            var response = await client.PostAsync(url, content);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return BadRequest();
+            }
+        }
+
+        return Ok();
+    }
+
 
     [HttpGet("{sectionName}")]
     [PlugindFromSubdomain]
