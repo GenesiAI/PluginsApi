@@ -80,7 +80,7 @@ public class PublicPluginController : ControllerBase
         }
 
         var section = plugin!.Sections?.SingleOrDefault(s => s.Name == sectionName);
-        if (section?.isDeleted == false)
+        if (section?.isDeleted != false)
         {
             return NotFound();
         }
