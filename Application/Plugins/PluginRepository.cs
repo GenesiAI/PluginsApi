@@ -1,4 +1,5 @@
-﻿using AiPlugin.Domain;
+﻿using System.Text.RegularExpressions;
+using AiPlugin.Domain;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,9 +15,17 @@ public class PluginRepository : IBaseRepository<Plugin>
 
     public async Task<Plugin> Add(Plugin entity, CancellationToken cancellationToken = default)
     {
+        CheckPlugin(entity);
         await dbContext.Plugins.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
+    }
+
+    private void CheckPlugin(Plugin entity)
+    {
+        //run  [a-zA-Z][a-zA-Z0-9_]*
+        if(!Regex.IsMatch(entity.NameForModel, "^[a-zA-Z][a-zA-Z0-9_]*$"))
+            throw new ArgumentException("NameForModel must be in [a-zA-Z][a-zA-Z0-9_]* format");
     }
 
     public IQueryable<Plugin> Get(CancellationToken cancellationToken = default)
