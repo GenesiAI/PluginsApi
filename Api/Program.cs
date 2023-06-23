@@ -10,9 +10,6 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddConsole();
-//deserialize and inject GPTSettings fron "GPTSettings" section of appsettings.json
-var gPTSettings = builder.Configuration.GetSection("GPTSettings").Get<GPTSettings>()!;
-builder.Services.AddSingleton(gPTSettings);
 
 //var keyVaultEndpoint = new Uri(Environment.GetEnvironmentVariable("VaultUri"));
 //builder.Configuration.AddAzureKeyVault(keyVaultEndpoint, new DefaultAzureCredential());
