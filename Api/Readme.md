@@ -43,7 +43,7 @@ IRkf6Jg2QslkHrjnKx_jeYi7AZDJucW7g5Vs5b-CHfs  // VALUE TO COPY
 This TXT record is used by Let's Encrypt to verify domain ownership. 
 #### 1.2 Verify Domain Ownership
 Go on [godaddy's genesi.ai dns page](https://dcc.godaddy.com/manage/genesi.ai/dns) and add a TXT record with the name and value provided by Certbot.
-press ENTER in Certbot to continue the process.
+Wait 2 mintues than press ENTER to continue the process.
 it should say something like:
 
 ``` bash
@@ -63,12 +63,12 @@ and run
 ```
 and than
 ``` bash
-openssl pkcs12 -export -out certificate.pfx -inkey privkey.pem -in fullchain.pem
+pkcs12 -export -out certificate.pfx -inkey privkey.pem -in fullchain.pem
 ```
 It should ask you for a password, provide it, remember it, you'll need it later.
 
 ### Upload Certificate to Azure:
-[Log in to the Azure portal](https://portal.azure.com/), navigate to the App Service (should be aiplugin-api) > "cetificates" > "Add a certificate" > "upload certificate"> 
+[Log in to the Azure portal](https://portal.azure.com/), navigate to the App Service (check if you're in prod or dev) > "cetificates" > "Add a certificate" > "upload certificate"> 
 Select the .pfx file, enter the password you used when exporting the certificate> "Validate".
 select "Custom Domains". Than in the list open the contest menu (...) of *.genesi.ai and select "Update binding" and select the new certificate.
 Remember, Let's Encrypt certificates are valid for 90 days. You'll need to repeat this process every 90 days to renew your certificate.
