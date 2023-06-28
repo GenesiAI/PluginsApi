@@ -1,18 +1,3 @@
-﻿# Ai plugin, making AI accessible to everyone - even your grandma!
-
-all nice stuffs here
-
-## Migrate
-migrations with 
-```
-dotnet ef migrations add "XYZ"  --output-dir .\Migrations\ --namespace AiPlugin.Migrations --project .\Infrastructure\Infrastructure.csproj --startup-project .\Api\Api.csproj -- --env Development
-```
-
-apply them with 
-
-```
-dotnet ef database update --project .\Infrastructure\Infrastructure.csproj --startup-project .\Api\Api.csproj -- --env Development 
-```
 
 ## Safe HTTPS Subdomain (wildcard SSL certificate)
 *The problem*   
@@ -72,3 +57,4 @@ It should ask you for a password, provide it, remember it, you'll need it later.
 Select the .pfx file, enter the password you used when exporting the certificate> "Validate".
 select "Custom Domains". Than in the list open the contest menu (...) of *.genesi.ai and select "Update binding" and select the new certificate.
 Remember, Let's Encrypt certificates are valid for 90 days. You'll need to repeat this process every 90 days to renew your certificate.
+
