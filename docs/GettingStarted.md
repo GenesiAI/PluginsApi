@@ -2,6 +2,7 @@
 
 ### Prerequisites
 - [Visual Studio](https://visualstudio.microsoft.com/vs/) or [Visual Studio Code](https://code.visualstudio.com/)
+- [Git](https://git-scm.com/downloads)
 - [.NET 7](https://dotnet.microsoft.com/download/dotnet/7.0)
 - [Azure Data Studio](https://docs.microsoft.com/en-us/sql/azure-data-studio/download-azure-data-studio)
 - [Migration tool](https://docs.microsoft.com/en-us/ef/core/cli/dotnet)
