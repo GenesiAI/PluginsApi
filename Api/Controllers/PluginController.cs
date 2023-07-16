@@ -26,15 +26,16 @@ public class PluginController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Plugin>> CreatePlugin([FromBody] PluginCreateRequest request)
     {
+        var plugins = await GetUserPlugins();
+        if (plugins.PluginsCount >= plugins.MaxPlugins) return BadRequest("Max plugins reached");
+        
         var plugin = mapper.Map<Plugin>(request);
         plugin.UserId = GetUserId();
         var createdPlugin = await pluginRepository.Add(plugin);
         return CreatedAtAction(nameof(CreatePlugin), new { userId = createdPlugin.UserId, pluginId = createdPlugin.Id }, createdPlugin);
     }
 
-    // Get plugins
-    [HttpGet]
-    public async Task<ActionResult<PluginsGetResponse>> GetPlugins()
+    private async Task<PluginsGetResponse> GetUserPlugins()
     {
         var userId = GetUserId();
         var plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
@@ -45,6 +46,15 @@ public class PluginController : ControllerBase
             MaxPlugins = 3,
             Plugins = plugins
         };
+
+        return result;
+    }
+
+    // Get plugins
+    [HttpGet]
+    public async Task<ActionResult<PluginsGetResponse>> GetPlugins()
+    {
+        var result = await GetUserPlugins();
 
         return Ok(result);
     }
