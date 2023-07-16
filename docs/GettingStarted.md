@@ -11,7 +11,8 @@
 
 So, you wanna run locally the solution with a local databse, to do so you will now create a database in 5 minutes and make your solution use it.
 
-[Download Azure data studio](https://docs.microsoft.com/en-us/sql/azure-data-studio/download-azure-data-studio), and connect to `Server=.;Database=MyDatabase;Trusted_Connection=True;` 
+[Download Azure data studio](https://docs.microsoft.com/en-us/sql/azure-data-studio/download-azure-data-studio), and connect to `Server=.;Database=MyDatabase;Trusted_Connection=True;` or 
+_`Server=(LocalDB)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=True`_
 Welcome to your local sql server   
 First let's bomb security locally so we can allow the sql user from the app access the database, run this query
 ```sql
@@ -21,7 +22,7 @@ EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE',
 N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2
 GO
 ```
-Create a new databse `Create datatabase aiplugin-localdev`
+Create a new database `Create datatabase aiplugin-localdev`
 
 Than let's create a user 
 ```sql
@@ -59,8 +60,7 @@ Now change the `ASPNETCORE_ENVIRONMENT` to `Development`  and as you're already 
 ![development launch profile](launch1.png "development launch profile")
 
 ---
-If you use visual studio code, good luck
-_I will think about it when i have time_
+If you use visual studio code, just select the correct launch configuration ![Run launch configuration](LaunchConf.png)
 
 Now, cool everthing should work, but the databse is empty, so let's create it running:
 `dotnet ef database update --project .\Infrastructure\Infrastructure.csproj --startup-project .\Api\Api.csproj -- --env Development`   
