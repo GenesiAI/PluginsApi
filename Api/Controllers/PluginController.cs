@@ -34,11 +34,19 @@ public class PluginController : ControllerBase
 
     // Get plugins
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Plugin>>> GetPlugins()
+    public async Task<ActionResult<PluginsGetResponse>> GetPlugins()
     {
         var userId = GetUserId();
         var plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
-        return Ok(plugins);
+
+        var result = new PluginsGetResponse
+        {
+            PluginsCount = plugins.Count,
+            MaxPlugins = 3,
+            Plugins = plugins
+        };
+
+        return Ok(result);
     }
 
     // Get plugin
