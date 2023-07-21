@@ -39,9 +39,9 @@ public class PluginController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PluginsGetResponse>> GetPlugins()
     {
-        var result = await GetUserPlugins();
-
-        return Ok(result);
+        var userId = GetUserId();
+        var plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
+        return Ok(plugins);
     }
 
     // Get plugin
