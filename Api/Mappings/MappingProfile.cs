@@ -29,7 +29,7 @@ public class MappingProfile : Profile
             {
                 dest.Paths = new OpenApiPaths();
 
-                foreach (var section in src.Sections)
+                foreach (var section in src.Sections?? new List<Section>())
                 {
                     dest.Paths.Add($"/{section.Name}", new OpenApiPathItem
                     {
