@@ -47,6 +47,7 @@ public class PluginRepository : IBaseRepository<Plugin>
 
     public async Task<Plugin> Update(Plugin entity, CancellationToken cancellationToken = default)
     {
+        CheckPlugin(entity);
         dbContext.Plugins.Update(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
