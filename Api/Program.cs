@@ -30,7 +30,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-var version = "1.2.2"; //pluginId and admin subdomain management with authenticated users
+var version = "1.2.3"; //pluginId and admin subdomain management with authenticated users
 builder.Services.AddSwaggerGen(options =>
 {
     options.OperationFilter<OpenApiParameterIgnoreFilter>();
