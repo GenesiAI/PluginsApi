@@ -112,6 +112,11 @@ public class MappingProfile : Profile
         CreateMap<PluginUpdateRequest, Plugin>();
         CreateMap<SectionCreateRequest, Section>();
         CreateMap<SectionUpdateRequest, Section>();
+
+        CreateMap<IEnumerable<Plugin>, PluginsGetResponse>()
+            .ForMember(dest => dest.PluginsCount, opt => opt.MapFrom(src => src.Count()))
+            .ForMember(dest => dest.MaxPlugins, opt => opt.MapFrom(src => 3))
+            .ForMember(dest => dest.Plugins, opt => opt.MapFrom(src => src));
     }
 
     private string GetBaseUrl()
