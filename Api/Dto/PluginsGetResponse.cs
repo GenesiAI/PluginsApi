@@ -6,5 +6,5 @@ public class PluginsGetResponse
 {
     public int PluginsCount { get; set; }
     public int MaxPlugins { get; set; }
-    public IEnumerable<Plugin> Plugins { get; set; }
+    public IEnumerable<Plugin> Plugins { get; set; } = null!;
 }

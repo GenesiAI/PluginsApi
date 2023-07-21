@@ -1,9 +1,10 @@
-﻿using AiPlugin.Domain;
+﻿using System.Text.RegularExpressions;
+using AiPlugin.Domain;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
 namespace AiPlugin.Application.Plugins;
-public class PluginRepository : IBaseRepository<Plugin>
+public class PluginRepository : IPluginRepository
 {
     private readonly AiPluginDbContext dbContext;
 
@@ -14,9 +15,17 @@ public class PluginRepository : IBaseRepository<Plugin>
 
     public async Task<Plugin> Add(Plugin entity, CancellationToken cancellationToken = default)
     {
+        CheckPlugin(entity);
         await dbContext.Plugins.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
+    }
+
+    public IQueryable<Plugin> Get(string userId, CancellationToken cancellationToken = default)
+    {
+        return Get(cancellationToken)
+            .Where(x => x.UserId == userId)
+            .AsQueryable();
     }
 
     public IQueryable<Plugin> Get(CancellationToken cancellationToken = default)
@@ -24,7 +33,8 @@ public class PluginRepository : IBaseRepository<Plugin>
         return dbContext
             .Plugins
             .Include(x => x.Sections)
-            .Where(x => !x.isDeleted).AsQueryable();
+            .Where(x => !x.isDeleted)
+            .AsQueryable();
     }
 
     public async Task<Plugin> Get(Guid id, CancellationToken cancellationToken = default)
@@ -38,6 +48,7 @@ public class PluginRepository : IBaseRepository<Plugin>
 
     public async Task<Plugin> Update(Plugin entity, CancellationToken cancellationToken = default)
     {
+        CheckPlugin(entity);
         dbContext.Plugins.Update(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
@@ -53,4 +64,10 @@ public class PluginRepository : IBaseRepository<Plugin>
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    private void CheckPlugin(Plugin entity)
+    {
+        //run  [a-zA-Z][a-zA-Z0-9_]*
+        if (!Regex.IsMatch(entity.NameForModel, "^[a-zA-Z][a-zA-Z0-9_]*$"))
+            throw new ArgumentException("NameForModel must be in [a-zA-Z][a-zA-Z0-9_]* format");
+    }
 }
