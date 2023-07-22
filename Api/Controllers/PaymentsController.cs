@@ -1,40 +1,68 @@
 using Stripe;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using Stripe.Checkout;
 
 [Route("api/[controller]")]
 public class PaymentsController : Controller
 {
-    // This endpoint creates a new Stripe customer if necessary, and a new subscription
-    [HttpPost("intent")]
-    public async Task<IActionResult> CreateSubscription([FromBody] CreateSubscriptionRequest request)
+    [HttpGet("intent")]
+    public async Task<IActionResult> CreateCheckoutSession()
     {
-        // If the user doesn't have a Stripe customer ID, create a new Stripe customer
-        if (string.IsNullOrEmpty(user.StripeCustomerId))
-        {
-            var stripeCustomer = await CreateStripeCustomer(user);
-            user.StripeCustomerId = stripeCustomer.Id;
+        var userEmail = "";
+        // TODO: Get the current user's email;
+        var userStripeCustomerId = "";
+        // TODO: Get the current user's Stripe customer ID from database if there is one, otherwise false is fine
+        
+        var priceId = "price_1NWcI7KxWQlpnUKopF95YKY3";
+        StripeConfiguration.ApiKey = "sk_test_51NUpR6KxWQlpnUKojYJKdYUbkU7bLtIzrNcuQYfljorsomr5g1VRq5qbQUYgE7WiCExKkVpLEWRk8qpOsWkgXozZ00tM5Nl6M0";
 
-            // Save the user's Stripe customer ID in your database
-            await SaveUserToDatabase(user);
+        var options = new SessionCreateOptions
+        {
+            // See https://stripe.com/docs/api/checkout/sessions/create
+            SuccessUrl = "https://genesi.ai/success",
+            CancelUrl = "https://genesi.ai/manage-subscriptions/cancelled",
+            Mode = "subscription",
+            LineItems = new List<SessionLineItemOptions>
+            {
+                new SessionLineItemOptions
+                {
+                    Price = priceId,
+                    // For metered billing, do not pass quantity
+                    Quantity = 1,
+                },
+            },
+
+            // customer options
+            CustomerEmail = userEmail,
+            PaymentIntentData = new SessionPaymentIntentDataOptions
+            {
+                SetupFutureUsage = "off_session",
+            },
+        };
+        if (!string.IsNullOrEmpty(userStripeCustomerId))
+        {
+            options.Customer = userStripeCustomerId;
         }
 
-        // Create the subscription
-        var stripeSubscription = await CreateStripeSubscription(user, request.PlanId);
+        var service = new SessionService();
+        var session = await service.CreateAsync(options);
 
-        // Return the subscription details to the frontend
-        return Ok(stripeSubscription);
+        // return the session ID to the frontend
+        return Ok(new { checkoutSessionId = session.Id });
     }
 
     // This endpoint is used by Stripe to send webhook events
     [HttpPost("webhook")]
+    /// <summary>
+    /// This endpoint is used by Stripe to send webhook events
     public async Task<IActionResult> HandleWebhook()
     {
-        // Handle Stripe's webhook events
+        return Ok();
     }
 
     // Additional methods and endpoints as needed...
-
+/*
     private async Task<User> GetUserFromDatabase(string userId)
     {
         // Implement this method to fetch a user from your database
@@ -53,5 +81,5 @@ public class PaymentsController : Controller
     private async Task<Subscription> CreateStripeSubscription(User user, string planId)
     {
         // Implement this method to create a Stripe subscription
-    }
+    }*/
 }
