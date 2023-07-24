@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/AiPlugin.Api/bin/Debug/net7.0/AiPlugin.Api.dll",
+            "program": "${workspaceFolder}/Api/bin/Debug/net7.0/Api.dll",
             "args": [],
-            "cwd": "${workspaceFolder}/AiPlugin.Api",
+            "cwd": "${workspaceFolder}/Api",
             "stopAtEntry": false,
             // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
             "serverReadyAction": {

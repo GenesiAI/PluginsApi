@@ -2,10 +2,10 @@ using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AiPlugin.Domain.Manifest;
 using AutoMapper;
+using Utilities.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
-using Newtonsoft.Json.Linq;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -78,51 +78,35 @@ public class PublicPluginController : ControllerBase
     [HttpPost("contact")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Contact([FromBody] JObject message)
+    public async Task<IActionResult> Contact([FromBody] ContactFormRequest contactRequest, [FromServices] IConfiguration configuration, [FromServices] IHttpClientFactory httpClientFactory)
     {
-        if (message == null)
+        if (!ModelState.IsValid)
         {
-            return BadRequest();
+            return BadRequest(ModelState);
         }
 
-        var email = message.Value<string>("email");
-        var name = message.Value<string>("name");
-        var msg = message.Value<string>("message");
-
-        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(name) || string.IsNullOrEmpty(msg))
-        {
-            return BadRequest();
-        }
-
-        if (!System.Text.RegularExpressions.Regex.IsMatch(email, @"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$"))
-        {
-            return BadRequest();
-        }
-
-        string signature = Environment.GetEnvironmentVariable("AZURE_LOGIC_CONTACT_EMAIL_SIGNATURE");
+        string signature = configuration["LogicApp:Signature"];
 
         if (string.IsNullOrEmpty(signature))
         {
-            // Handle the case where the environment variable is not set
             return BadRequest();
         }
 
-        var newMessage = new JObject {
-            ["email"] = email,
-            ["name"] = name,
-            ["message"] = msg
-        };
-
-        using (var client = new HttpClient())
+        try
         {
-            var content = new StringContent(newMessage.ToString(), System.Text.Encoding.UTF8, "application/json");
-            var url = "https://prod-250.westeurope.logic.azure.com:443/workflows/884b292e648b4b26beeed8d79e2341cc/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=" + signature;
-            var response = await client.PostAsync(url, content);
+            var url = configuration["LogicApp:Url"] + "&sig=" + signature;
+
+            var client = httpClientFactory.CreateClient();
+            var response = await client.PostAsJsonAsync(url, contactRequest);
 
             if (!response.IsSuccessStatusCode)
             {
                 return BadRequest();
             }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500);
         }
 
         return Ok();
