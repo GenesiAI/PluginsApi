@@ -24,6 +24,7 @@ public class PluginRepository : IBaseRepository<Plugin>
         return dbContext
             .Plugins
             .Include(x => x.Sections)
+            .OrderBy(x => x.CreationDateTime)
             .Where(x => !x.isDeleted).AsQueryable();
     }
 

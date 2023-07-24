@@ -44,6 +44,7 @@ builder.Services.AddSwaggerGen(options =>
 
 
 builder.Services.AddScoped<IBaseRepository<Plugin>, PluginRepository>();
+builder.Services.AddScoped<SubscriptionRepository>();
 
 builder.Services.AddAuthentication(options => { options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; })
       .AddJwtBearer(options =>

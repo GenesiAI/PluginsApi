@@ -2,20 +2,40 @@ using Stripe;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Stripe.Checkout;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
+
+// [Authorize]
 [Route("api/[controller]")]
 public class PaymentsController : Controller
 {
+    const string endpointSecret = "whsec_c5eec0c1be214329f59549fb146423d6acb33d75363f4eab0541acf1d52c190f";
+    // private readonly UserService _userService;
+    private readonly SubscriptionRepository _subscriptionRepository;
+
+    public PaymentsController(SubscriptionRepository subscriptionRepository)
+    {
+        // _userService = userService;
+        _subscriptionRepository = subscriptionRepository;
+    }
+
     [HttpGet("intent")]
     public async Task<IActionResult> CreateCheckoutSession()
     {
-        var userEmail = "";
-        // TODO: Get the current user's email;
-        var userStripeCustomerId = "";
-        // TODO: Get the current user's Stripe customer ID from database if there is one, otherwise false is fine
+        var userId = GetUserId();
+        // customer can be null if it's the first time that the user is subscribing
         
         var priceId = "price_1NWcI7KxWQlpnUKopF95YKY3";
         StripeConfiguration.ApiKey = "sk_test_51NUpR6KxWQlpnUKojYJKdYUbkU7bLtIzrNcuQYfljorsomr5g1VRq5qbQUYgE7WiCExKkVpLEWRk8qpOsWkgXozZ00tM5Nl6M0";
+
+        // recycle existing pending checkout when possible
+        var pendingCheckout = await _subscriptionRepository.GetPendingCheckout(userId);
+        var checkoutSessionId = pendingCheckout?.CheckoutSessionId;
+        if (checkoutSessionId != null)
+        {
+            return Ok(new { checkoutSessionId = checkoutSessionId });
+        }
 
         var options = new SessionCreateOptions
         {
@@ -31,22 +51,25 @@ public class PaymentsController : Controller
                     // For metered billing, do not pass quantity
                     Quantity = 1,
                 },
-            },
-
-            // customer options
-            CustomerEmail = userEmail,
-            PaymentIntentData = new SessionPaymentIntentDataOptions
-            {
-                SetupFutureUsage = "off_session",
-            },
+            }
         };
-        if (!string.IsNullOrEmpty(userStripeCustomerId))
+        var customer = await _subscriptionRepository.GetCustomerByUserId(userId);
+        if (customer != null)
         {
-            options.Customer = userStripeCustomerId;
+            options.Customer = customer.CustomerId;
         }
 
         var service = new SessionService();
         var session = await service.CreateAsync(options);
+
+        // save row in checkouts
+        var checkout = new Checkout
+        {
+            CheckoutSessionId = session.Id,
+            UserId = userId,
+            Status = "pending",
+        };
+        await _subscriptionRepository.AddCheckout(checkout);
 
         // return the session ID to the frontend
         return Ok(new { checkoutSessionId = session.Id });
@@ -54,32 +77,107 @@ public class PaymentsController : Controller
 
     // This endpoint is used by Stripe to send webhook events
     [HttpPost("webhook")]
-    /// <summary>
-    /// This endpoint is used by Stripe to send webhook events
     public async Task<IActionResult> HandleWebhook()
     {
-        return Ok();
-    }
+        var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+        try
+        {
+            var stripeEvent = EventUtility.ConstructEvent(json,
+                Request.Headers["Stripe-Signature"], endpointSecret);
 
-    // Additional methods and endpoints as needed...
-/*
-    private async Task<User> GetUserFromDatabase(string userId)
-    {
-        // Implement this method to fetch a user from your database
-    }
+            // Handle the event
+            switch (stripeEvent.Type) {
+                case Events.CheckoutSessionExpired:
+                // user has abandoned the checkout
+                // mark the checkout as expired in the database
+                var sessionToDelete = stripeEvent.Data.Object as Session;
+                var checkoutToDelete = await _subscriptionRepository.GetCheckout(sessionToDelete.Id);
+                checkoutToDelete.Status = "expired";
+                await _subscriptionRepository.UpdateCheckout(checkoutToDelete);
+                break;
 
-    private async Task SaveUserToDatabase(User user)
-    {
-        // Implement this method to save a user to your database
+                case Events.CheckoutSessionCompleted:
+                // user has created their session by paying
+                var sessionCreated = stripeEvent.Data.Object as Session;
+                // find the session row in the database
+                var completedCheckout = await _subscriptionRepository.GetCheckout(sessionCreated.Id);
+                // update the checkout row in the database
+                completedCheckout.Status = "completed";
+                await _subscriptionRepository.UpdateCheckout(completedCheckout);
+                // we now know the UserId
+                var userId = completedCheckout.UserId;
+                // find the customer row in the database
+                var customer = await _subscriptionRepository.GetCustomerByUserId(userId);
+                // if the customer row doesn't exist, create it
+                if (customer == null)
+                {
+                    var customerId = sessionCreated.Customer.Id;
+                    var newCustomer = new Customer
+                    {
+                        UserId = userId,
+                        CustomerId = customerId,
+                    };
+                    await _subscriptionRepository.AddCustomer(newCustomer);
+                }
+                // find the subscription row in the database
+                var subscription = await _subscriptionRepository.GetSubscriptionByUserId(userId);
+                // if the subscription row doesn't exist, create it
+                if (subscription == null)
+                {
+                    var subscriptionId = sessionCreated.Subscription.Id;
+                    var status = sessionCreated.Subscription.Status;
+                    var expiresOn = sessionCreated.Subscription.CurrentPeriodEnd;
+                    var eventTime = stripeEvent.Created;
+                    var newSubscription = new Subscription
+                    {
+                        SubscriptionId = subscriptionId,
+                        UserId = userId,
+                        CustomerId = customer.CustomerId,
+                        Status = status,
+                        ExpiresOn = expiresOn,
+                        EventTime = eventTime,
+                    };
+                    await _subscriptionRepository.AddSubscription(newSubscription);
+                }
+                // if the subscription row does exist, update it
+                else
+                {
+                    var status = sessionCreated.Subscription.Status;
+                    var expiresOn = sessionCreated.Subscription.CurrentPeriodEnd;
+                    var eventTime = stripeEvent.Created;
+                    subscription.Status = status;
+                    subscription.ExpiresOn = expiresOn;
+                    subscription.EventTime = eventTime;
+                    await _subscriptionRepository.UpdateSubscription(subscription);
+                }
+                break;
+                
+                case Events.CustomerSubscriptionCreated: case Events.CustomerSubscriptionDeleted: case Events.CustomerSubscriptionUpdated:
+                // log the whole object to the console
+                Console.WriteLine(stripeEvent.Data.Object);
+                break;
+                default:
+                Console.WriteLine("Unhandled event type: {0}", stripeEvent.Type);
+                break;
+            }
+            return Ok();
+        }
+        catch (StripeException e)
+        {
+            return BadRequest();
+        }
     }
-
-    private async Task<Customer> CreateStripeCustomer(User user)
+    
+    #region private methods
+    private string GetUserId()
     {
-        // Implement this method to create a Stripe customer
+        var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (id != null) return id;
+        throw new UnauthorizedAccessException("UserId not found");
     }
-
-    private async Task<Subscription> CreateStripeSubscription(User user, string planId)
+    private bool IsMatchingAuthenticatedUserId(string userId)
     {
-        // Implement this method to create a Stripe subscription
-    }*/
+        return string.Equals(userId, GetUserId(), StringComparison.OrdinalIgnoreCase);
+    }
+    #endregion
 }
