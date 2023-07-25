@@ -12,10 +12,10 @@ namespace AiPlugin.Api.Controllers;
 [ApiController]
 public class PublicPluginController : ControllerBase
 {
-    private readonly IBaseRepository<Plugin> pluginRepository;
+    private readonly IPluginRepository pluginRepository;
     private readonly int millisecondsDelay = 700;
     private readonly IMapper mapper;
-    public PublicPluginController(IBaseRepository<Plugin> pluginRepository, IMapper mapper)
+    public PublicPluginController(IPluginRepository pluginRepository, IMapper mapper)
     {
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
