@@ -7,7 +7,7 @@ public class Section : EntityBase, IDeleted
 {
     public Guid PluginId { get; set; }
 
-    [MaxLength(200)] //defined by us
+    [MaxLength(50)] //defined by us
     public string Name { get; set; } = null!;
 
     [MaxLength(200)]
