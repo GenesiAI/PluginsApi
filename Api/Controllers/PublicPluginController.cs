@@ -1,3 +1,4 @@
+using AiPlugin.Api.Dto;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AiPlugin.Domain.Manifest;
@@ -24,7 +25,11 @@ public class PublicPluginController : AuthBase.Controllers.AuthController
     {
         try
         {
-            var plugin = await pluginRepository.Get(pluginId);
+            AppPlugin appPlugin = GetPlugin(pluginId);
+            if ( ! appPlugin.IsActive ) return Unauthorized();
+
+            Plugin plugin = mapper.Map<Plugin>(appPlugin);
+            
             return Ok(mapper.Map<Plugin, AiPluginManifest>(plugin));
         }
         catch (KeyNotFoundException)
@@ -39,7 +44,10 @@ public class PublicPluginController : AuthBase.Controllers.AuthController
     {
         try
         {
-            var plugin = await pluginRepository.Get(pluginId);
+            AppPlugin appPlugin = GetPlugin(pluginId);
+            if ( ! appPlugin.IsActive ) return Unauthorized();
+            
+            Plugin plugin = mapper.Map<Plugin>(appPlugin);
             var result = mapper.Map<Plugin, OpenApiDocument>(plugin);
 
             using (var writer = new StringWriter())
@@ -67,7 +75,10 @@ public class PublicPluginController : AuthBase.Controllers.AuthController
         Plugin plugin;
         try
         {
-            plugin = await pluginRepository.Get(pluginId);
+            AppPlugin appPlugin = GetPlugin(pluginId);
+            if (!appPlugin.IsActive) return Unauthorized();
+
+            plugin = mapper.Map<Plugin>(appPlugin);
         }
         catch (KeyNotFoundException)
         {

@@ -1,11 +1,12 @@
 // this class is the base controller for all controllers, gives access to the user id
 using System.Security.Claims;
+using AiPlugin.Api.Dto;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace AuthBase.Controllers
 {
@@ -39,6 +40,49 @@ namespace AuthBase.Controllers
         {
             var subscriptions = _subscriptionRepository.GetSubscriptionByUserId(userId).Result;
             return subscriptions != null && subscriptions.ExpiresOn > DateTime.UtcNow;
+        }
+
+        protected AppPlugin GetPlugin(Guid pluginId)
+        {
+            Plugin plugin = pluginRepository.Get(pluginId).Result;
+            string userId = plugin.UserId;
+            return GetPlugin(userId, pluginId);
+        }
+
+        protected AppPlugin GetPlugin(string userId, Guid pluginId)
+        {
+            List<AppPlugin> plugins = GetUserPlugins(userId);
+            return plugins.FirstOrDefault(p => p.Id == pluginId);
+        }
+
+        protected List<AppPlugin> GetUserPlugins()
+        {
+            var userId = GetUserId();
+            return GetUserPlugins(userId);
+        }
+
+        protected List<AppPlugin> GetUserPlugins(string userId)
+        {
+            var _plugins = pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
+            var plugins = mapper.Map<List<AppPlugin>>(_plugins);
+            int maxPlugins = userHasActiveSubscription(userId) ? 10 : 3;
+            for (int i = 0; i < plugins.Count; i++)
+            {
+                plugins[i].IsActive = i < maxPlugins;
+            }
+
+            return plugins;
+        }
+
+        protected bool userCanCreateMore()
+        {
+            var userId = GetUserId();
+            return userCanCreateMore(userId);
+        }
+
+        protected bool userCanCreateMore(string userId)
+        {
+            return GetUserPlugins(userId).Count < ( userHasActiveSubscription(userId) ? 10 : 3 );
         }
         
         [Authorize]

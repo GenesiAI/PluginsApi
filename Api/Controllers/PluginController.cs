@@ -20,52 +20,40 @@ public class PluginController : AuthController
     [HttpPost]
     public async Task<ActionResult<Plugin>> CreatePlugin([FromBody] PluginCreateRequest request)
     {
-        var plugins = await GetUserPlugins();
-        if (plugins.PluginsCount >= plugins.MaxPlugins) return BadRequest("Max plugins reached");
+        string userId = GetUserId();
+        
+        if (!userCanCreateMore(userId)) return BadRequest("Max plugins reached");
 
         var plugin = mapper.Map<Plugin>(request);
-        plugin.UserId = GetUserId();
+        plugin.UserId = userId;
         var createdPlugin = await pluginRepository.Add(plugin);
+        
         return CreatedAtAction(nameof(CreatePlugin), new { userId = createdPlugin.UserId, pluginId = createdPlugin.Id }, createdPlugin);
-    }
-    
-    private async Task<PluginsGetResponse> GetUserPlugins()
-    {
-        var userId = GetUserId();
-        var _plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
-        var plugins = mapper.Map<List<AppPlugin>>(_plugins);
-        int maxPlugins = userHasActiveSubscription() ? 10 : 3;
-        for (int i = 0; i < plugins.Count; i++)
-        {
-            plugins[i].IsActive = i < maxPlugins;
-        }
-
-        var result = new PluginsGetResponse
-        {
-            PluginsCount = plugins.Count,
-            MaxPlugins = maxPlugins,
-            Plugins = plugins
-        };
-
-        return result;
     }
 
     // Get plugins
     [HttpGet]
-    public async Task<ActionResult<PluginsGetResponse>> GetPlugins()
+    public async Task<ActionResult<PluginsGetResponse>> GetPluginsEndpoint()
     {
-        var result = await GetUserPlugins();
+        string userId = GetUserId();
+        List<AppPlugin> plugins = GetUserPlugins(userId);
+        PluginsGetResponse result = new PluginsGetResponse
+        {
+            PluginsCount = plugins.Count,
+            MaxPlugins = userHasActiveSubscription(userId) ? 10 : 3,
+            Plugins = plugins
+        };
 
         return Ok(result);
     }
 
     // Get plugin
     [HttpGet("{pluginId}")]
-    public async Task<ActionResult<Plugin>> GetPlugin(Guid pluginId)
+    public async Task<ActionResult<AppPlugin>> GetPluginEndpoint(Guid pluginId)
     {
         try
         {
-            var plugin = await pluginRepository.Get(pluginId);
+            AppPlugin plugin = GetPlugin(pluginId);
             return Ok(plugin);
         }
         catch (KeyNotFoundException)
