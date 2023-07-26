@@ -1,18 +1,16 @@
 using AiPlugin.Api.Dto;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
+using AuthBase.Controllers;
 using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace AiPlugin.Api.Controllers;
 
-[Authorize]
 [ApiController]
 [Route("api/plugins")]
-public class PluginController : ControllerBase
+public class PluginController : AuthController
 {
     private readonly IBaseRepository<Plugin> pluginRepository;
     private readonly IMapper mapper;
@@ -197,17 +195,4 @@ public class PluginController : ControllerBase
             return NotFound();
         }
     }
-
-    #region private methods
-    private string GetUserId()
-    {
-        var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (id != null) return id;
-        throw new UnauthorizedAccessException("UserId not found");
-    }
-    private bool IsMatchingAuthenticatedUserId(string userId)
-    {
-        return string.Equals(userId, GetUserId(), StringComparison.OrdinalIgnoreCase);
-    }
-    #endregion
 }

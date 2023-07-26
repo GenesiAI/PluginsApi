@@ -1,14 +1,10 @@
 using Stripe;
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
 using Stripe.Checkout;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
+using AuthBase.Controllers;
 
-
-// [Authorize]
 [Route("api/[controller]")]
-public class PaymentsController : Controller
+public class PaymentsController : AuthController
 {
     const string endpointSecret = "whsec_c5eec0c1be214329f59549fb146423d6acb33d75363f4eab0541acf1d52c190f";
     // private readonly UserService _userService;
@@ -167,17 +163,4 @@ public class PaymentsController : Controller
             return BadRequest();
         }
     }
-    
-    #region private methods
-    private string GetUserId()
-    {
-        var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (id != null) return id;
-        throw new UnauthorizedAccessException("UserId not found");
-    }
-    private bool IsMatchingAuthenticatedUserId(string userId)
-    {
-        return string.Equals(userId, GetUserId(), StringComparison.OrdinalIgnoreCase);
-    }
-    #endregion
 }
