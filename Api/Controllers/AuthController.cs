@@ -63,8 +63,8 @@ namespace AuthBase.Controllers
 
         protected List<AppPlugin> GetUserPlugins(string userId)
         {
-            var _plugins = pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
-            var plugins = mapper.Map<List<AppPlugin>>(_plugins);
+            Task<List<Plugin>> _plugins = pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
+            List<AppPlugin> plugins = _plugins.Result.Select(p => mapper.Map<AppPlugin>(p)).ToList();
             int maxPlugins = userHasActiveSubscription(userId) ? 10 : 3;
             for (int i = 0; i < plugins.Count; i++)
             {

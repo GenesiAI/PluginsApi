@@ -112,6 +112,9 @@ public class MappingProfile : Profile
         CreateMap<PluginUpdateRequest, Plugin>();
         CreateMap<SectionCreateRequest, Section>();
         CreateMap<SectionUpdateRequest, Section>();
+
+        CreateMap<Plugin, AppPlugin>();
+        CreateMap<AppPlugin, Plugin>();
     }
 
     private string GetBaseUrl()
