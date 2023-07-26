@@ -7,13 +7,9 @@ using AuthBase.Controllers;
 public class PaymentsController : AuthController
 {
     const string endpointSecret = "whsec_c5eec0c1be214329f59549fb146423d6acb33d75363f4eab0541acf1d52c190f";
-    // private readonly UserService _userService;
-    private readonly SubscriptionRepository _subscriptionRepository;
-
     public PaymentsController(SubscriptionRepository subscriptionRepository)
+        : base(subscriptionRepository)
     {
-        // _userService = userService;
-        _subscriptionRepository = subscriptionRepository;
     }
 
     [HttpGet("intent")]

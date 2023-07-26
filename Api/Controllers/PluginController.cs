@@ -12,37 +12,49 @@ namespace AiPlugin.Api.Controllers;
 [Route("api/plugins")]
 public class PluginController : AuthController
 {
-    private readonly IBaseRepository<Plugin> pluginRepository;
-    private readonly IMapper mapper;
-    public PluginController(IBaseRepository<Plugin> pluginRepository, IMapper mapper)
+    public PluginController(SubscriptionRepository subscriptionRepository, IBaseRepository<Plugin> pluginRepository, IMapper mapper)
+        : base(subscriptionRepository, pluginRepository, mapper)
     {
-        this.pluginRepository = pluginRepository;
-        this.mapper = mapper;
     }
-
     // Create plugin
     [HttpPost]
     public async Task<ActionResult<Plugin>> CreatePlugin([FromBody] PluginCreateRequest request)
     {
+        var plugins = await GetUserPlugins();
+        if (plugins.PluginsCount >= plugins.MaxPlugins) return BadRequest("Max plugins reached");
+
         var plugin = mapper.Map<Plugin>(request);
         plugin.UserId = GetUserId();
         var createdPlugin = await pluginRepository.Add(plugin);
         return CreatedAtAction(nameof(CreatePlugin), new { userId = createdPlugin.UserId, pluginId = createdPlugin.Id }, createdPlugin);
+    }
+    
+    private async Task<PluginsGetResponse> GetUserPlugins()
+    {
+        var userId = GetUserId();
+        var _plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
+        var plugins = mapper.Map<List<AppPlugin>>(_plugins);
+        int maxPlugins = userHasActiveSubscription() ? 10 : 3;
+        for (int i = 0; i < plugins.Count; i++)
+        {
+            plugins[i].IsActive = i < maxPlugins;
+        }
+
+        var result = new PluginsGetResponse
+        {
+            PluginsCount = plugins.Count,
+            MaxPlugins = maxPlugins,
+            Plugins = plugins
+        };
+
+        return result;
     }
 
     // Get plugins
     [HttpGet]
     public async Task<ActionResult<PluginsGetResponse>> GetPlugins()
     {
-        var userId = GetUserId();
-        var plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
-
-        var result = new PluginsGetResponse
-        {
-            PluginsCount = plugins.Count,
-            MaxPlugins = 3,
-            Plugins = plugins
-        };
+        var result = await GetUserPlugins();
 
         return Ok(result);
     }

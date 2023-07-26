@@ -10,19 +10,16 @@ namespace AiPlugin.Api.Controllers;
 
 //public stuffs
 [ApiController]
-public class PublicPluginController : ControllerBase
+public class PublicPluginController : AuthBase.Controllers.AuthController
 {
-    private readonly IBaseRepository<Plugin> pluginRepository;
     private readonly int millisecondsDelay = 700;
-    private readonly IMapper mapper;
-    public PublicPluginController(IBaseRepository<Plugin> pluginRepository, IMapper mapper)
+    public PublicPluginController(SubscriptionRepository subscriptionRepository, IBaseRepository<Plugin> pluginRepository, IMapper mapper)
+        : base(subscriptionRepository, pluginRepository, mapper)
     {
-        this.pluginRepository = pluginRepository;
-        this.mapper = mapper;
     }
 
     [HttpGet(".well-known/ai-plugin.json")]
-    [PlugindFromSubdomain]
+    [PluginIdFromSubdomain]
     public async Task<ActionResult<AiPluginManifest>> GetManifest([OpenApiParameterIgnore] Guid pluginId)
     {
         try
@@ -37,7 +34,7 @@ public class PublicPluginController : ControllerBase
     }
 
     [HttpGet("openapi.json")]
-    [PlugindFromSubdomain]
+    [PluginIdFromSubdomain]
     public async Task<IActionResult> GetOpenAPISpecification([OpenApiParameterIgnore] Guid pluginId)
     {
         try
@@ -64,11 +61,9 @@ public class PublicPluginController : ControllerBase
     }
 
     [HttpGet("{sectionName}")]
-    [PlugindFromSubdomain]
+    [PluginIdFromSubdomain]
     public async Task<ActionResult<Section>> GetSection(string sectionName, [OpenApiParameterIgnore] Guid pluginId)
     {
-        //todo if the section require authenticated users check for authentication
-        await Task.Delay(millisecondsDelay);
         Plugin plugin;
         try
         {
@@ -77,6 +72,11 @@ public class PublicPluginController : ControllerBase
         catch (KeyNotFoundException)
         {
             return NotFound();
+        }
+        
+        if ( ! userHasActiveSubscription(plugin.UserId) )
+        {
+            await Task.Delay(millisecondsDelay);
         }
 
         var section = plugin!.Sections?.SingleOrDefault(s => s.Name == sectionName);
