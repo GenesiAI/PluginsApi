@@ -63,8 +63,16 @@ public class PaymentsController : AuthController
         };
         await _subscriptionRepository.AddCheckout(checkout);
 
-        // return the session ID to the frontend
-        return Ok(new { checkoutSessionId = session.Id });
+        // if GET was requested using flag ?automatic=false, return the session id; otherwise redirect to the checkout page
+        if (Request.Query.ContainsKey("automatic") && Request.Query["automatic"] == "false")
+        {
+            return Ok(new { checkoutSessionId = session.Id });
+        }
+        else
+        {
+            Response.Headers.Add("Location", session.Url);
+            return new StatusCodeResult(303);
+        }
     }
 
     // This endpoint is used by Stripe to send webhook events
