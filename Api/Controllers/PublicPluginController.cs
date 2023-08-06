@@ -16,10 +16,15 @@ public class PublicPluginController : ControllerBase
     private readonly IPluginRepository pluginRepository;
     private readonly int millisecondsDelay = 700;
     private readonly IMapper mapper;
-    public PublicPluginController(IPluginRepository pluginRepository, IMapper mapper)
+    private readonly IHttpClientFactory httpClientFactory;
+    private readonly ContactSetting contactSettings;
+
+    public PublicPluginController(IPluginRepository pluginRepository, IMapper mapper, IHttpClientFactory httpClientFactory, ContactSetting contactSettings)
     {
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
+        this.httpClientFactory = httpClientFactory;
+        this.contactSettings = contactSettings;
     }
 
     [HttpGet(".well-known/ai-plugin.json")]
@@ -64,51 +69,20 @@ public class PublicPluginController : ControllerBase
         }
     }
 
-    /**
-    * Receives a POST request containing an email, name, and message as input.
-    * Validates the email using a standard regular expression (regex).
-    * Sends an HTTP POST request to the specified endpoint with the message payload.
-    * This endpoint does not require user authentication.
-    * Returns a 200 OK status code if the message is successfully sent.
-    * Returns a 400 Bad Request status code if the input data is missing, or the email is invalid.
-    *
-    * @param message The JSON object containing the email, name, and message.
-    * @returns IActionResult indicating the status of the request.
-    */
+    /// <summary>
+    /// Echoes the the contact request to the service that handles it hinding the key, basically proxy.
+    /// </summary>
+
     [HttpPost("contact")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Contact([FromBody] ContactFormRequest contactRequest, [FromServices] IConfiguration configuration, [FromServices] IHttpClientFactory httpClientFactory)
+    public async Task<IActionResult> Contact(ContactFormRequest contactRequest)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
+        var client = httpClientFactory.CreateClient();
+        var response = await client.PostAsJsonAsync(contactSettings.Url, contactRequest);
 
-        string signature = configuration["LogicApp:Signature"];
-
-        if (string.IsNullOrEmpty(signature))
+        if (!response.IsSuccessStatusCode)
         {
             return BadRequest();
         }
-
-        try
-        {
-            var url = configuration["LogicApp:Url"] + "&sig=" + signature;
-
-            var client = httpClientFactory.CreateClient();
-            var response = await client.PostAsJsonAsync(url, contactRequest);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                return BadRequest();
-            }
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500);
-        }
-
         return Ok();
     }
 

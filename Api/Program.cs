@@ -1,3 +1,4 @@
+using AiPlugin.Api.Controllers;
 using AiPlugin.Application.Old.OpenAi.Models;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
@@ -42,6 +43,9 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+var contactUrl = builder.Configuration.GetValue<string>("ContactLogicApp:Url");
+ArgumentNullException.ThrowIfNull(contactUrl);
+builder.Services.AddSingleton(new ContactSetting() { Url = contactUrl });
 
 builder.Services.AddScoped<IPluginRepository, PluginRepository>();
 
