@@ -2,9 +2,11 @@ using AiPlugin.Application.Plugins;
 using AiPlugin.Domain;
 using AiPlugin.Domain.Manifest;
 using AutoMapper;
+using Utilities.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -15,10 +17,16 @@ public class PublicPluginController : ControllerBase
     private readonly IPluginRepository pluginRepository;
     private readonly int millisecondsDelay = 700;
     private readonly IMapper mapper;
-    public PublicPluginController(IPluginRepository pluginRepository, IMapper mapper)
+    private readonly IHttpClientFactory httpClientFactory;
+    private readonly ContactSetting contactSettings;
+
+    public PublicPluginController(IPluginRepository pluginRepository, IMapper mapper, IHttpClientFactory httpClientFactory,
+        ContactSetting contactSettings)
     {
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
+        this.httpClientFactory = httpClientFactory;
+        this.contactSettings = contactSettings;
     }
 
     [HttpGet(".well-known/ai-plugin.json")]
@@ -62,6 +70,24 @@ public class PublicPluginController : ControllerBase
             return NotFound();
         }
     }
+
+    /// <summary>
+    /// Echoes the the contact request to the service that handles it hinding the key, basically proxy.
+    /// </summary>
+
+    [HttpPost("contact")]
+    public async Task<IActionResult> Contact(ContactFormRequest contactRequest)
+    {
+        var client = httpClientFactory.CreateClient();
+        var response = await client.PostAsJsonAsync(contactSettings.Url, contactRequest);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new OperationException("Error contacting the service " + response.StatusCode + " " + response.ReasonPhrase);
+        }
+        return Ok();
+    }
+
 
     [HttpGet("{sectionName}")]
     [PlugindFromSubdomain]
