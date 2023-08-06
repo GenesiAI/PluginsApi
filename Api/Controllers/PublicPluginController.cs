@@ -6,6 +6,7 @@ using Utilities.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -19,7 +20,8 @@ public class PublicPluginController : ControllerBase
     private readonly IHttpClientFactory httpClientFactory;
     private readonly ContactSetting contactSettings;
 
-    public PublicPluginController(IPluginRepository pluginRepository, IMapper mapper, IHttpClientFactory httpClientFactory, ContactSetting contactSettings)
+    public PublicPluginController(IPluginRepository pluginRepository, IMapper mapper, IHttpClientFactory httpClientFactory,
+        ContactSetting contactSettings)
     {
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
@@ -81,7 +83,7 @@ public class PublicPluginController : ControllerBase
 
         if (!response.IsSuccessStatusCode)
         {
-            return BadRequest();
+            throw new OperationException("Error contacting the service " + response.StatusCode + " " + response.ReasonPhrase);
         }
         return Ok();
     }
