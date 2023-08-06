@@ -10,9 +10,6 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddConsole();
-//deserialize and inject GPTSettings fron "GPTSettings" section of appsettings.json
-var gPTSettings = builder.Configuration.GetSection("GPTSettings").Get<GPTSettings>()!;
-builder.Services.AddSingleton(gPTSettings);
 
 //var keyVaultEndpoint = new Uri(Environment.GetEnvironmentVariable("VaultUri"));
 //builder.Configuration.AddAzureKeyVault(keyVaultEndpoint, new DefaultAzureCredential());
@@ -33,7 +30,7 @@ builder.Services.AddCors(options =>
         });
 });
 
-var version = "1.2.2"; //pluginId and admin subdomain management with authenticated users
+var version = "1.2.3"; //added plugin count and max plugin count to get plugins response
 builder.Services.AddSwaggerGen(options =>
 {
     options.OperationFilter<OpenApiParameterIgnoreFilter>();
@@ -46,7 +43,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 
-builder.Services.AddScoped<IBaseRepository<Plugin>, PluginRepository>();
+builder.Services.AddScoped<IPluginRepository, PluginRepository>();
 
 builder.Services.AddAuthentication(options => { options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; })
       .AddJwtBearer(options =>

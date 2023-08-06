@@ -29,7 +29,7 @@ public class MappingProfile : Profile
             {
                 dest.Paths = new OpenApiPaths();
 
-                foreach (var section in src.Sections)
+                foreach (var section in src.Sections?? new List<Section>())
                 {
                     dest.Paths.Add($"/{section.Name}", new OpenApiPathItem
                     {
@@ -102,7 +102,7 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Api, opt => opt.MapFrom(src => new Api
             {
                 Type = "openapi",
-                Url = GetPluginUrl(src.Id) + "/swagger.json"
+                Url = GetPluginUrl(src.Id) + "/openapi.json"
             }))
             .ForMember(dest => dest.LogoUrl, opt => opt.MapFrom(src => src.LogoUrl))
             .ForMember(dest => dest.ContactEmail, opt => opt.MapFrom(src => src.ContactEmail))
@@ -112,11 +112,16 @@ public class MappingProfile : Profile
         CreateMap<PluginUpdateRequest, Plugin>();
         CreateMap<SectionCreateRequest, Section>();
         CreateMap<SectionUpdateRequest, Section>();
+
+        CreateMap<IEnumerable<Plugin>, PluginsGetResponse>()
+            .ForMember(dest => dest.PluginsCount, opt => opt.MapFrom(src => src.Count()))
+            .ForMember(dest => dest.MaxPlugins, opt => opt.MapFrom(src => 3))
+            .ForMember(dest => dest.Plugins, opt => opt.MapFrom(src => src));
     }
 
     private string GetBaseUrl()
     {
-        return /*env.IsDevelopment() ? "localhost:7210" :*/ "Genesi.AI";
+        return /*env.IsDevelopment() ? "localhost:7210" :*/ "genesi.ai";
     }
     public string GetPluginUrl(Guid pluginId)
     {

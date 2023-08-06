@@ -7,6 +7,4 @@ namespace AiPlugin.Domain.Manifest
         [JsonPropertyName("type")]
         public string Type { get; set; } = null!;
     }
-
-
 }

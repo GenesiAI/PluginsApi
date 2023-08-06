@@ -14,9 +14,9 @@ namespace AiPlugin.Api.Controllers;
 [Route("api/plugins")]
 public class PluginController : ControllerBase
 {
-    private readonly IBaseRepository<Plugin> pluginRepository;
+    private readonly IPluginRepository pluginRepository;
     private readonly IMapper mapper;
-    public PluginController(IBaseRepository<Plugin> pluginRepository, IMapper mapper)
+    public PluginController(IPluginRepository pluginRepository, IMapper mapper)
     {
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
@@ -26,6 +26,9 @@ public class PluginController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Plugin>> CreatePlugin([FromBody] PluginCreateRequest request)
     {
+        var plugins = await GetUserPlugins();
+        if (plugins.PluginsCount >= plugins.MaxPlugins) return BadRequest("Max plugins reached");
+
         var plugin = mapper.Map<Plugin>(request);
         plugin.UserId = GetUserId();
         var createdPlugin = await pluginRepository.Add(plugin);
@@ -34,11 +37,9 @@ public class PluginController : ControllerBase
 
     // Get plugins
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Plugin>>> GetPlugins()
+    public async Task<ActionResult<PluginsGetResponse>> GetPlugins()
     {
-        var userId = GetUserId();
-        var plugins = await pluginRepository.Get().Where(p => p.UserId == userId).ToListAsync();
-        return Ok(plugins);
+        return Ok(await GetUserPlugins());
     }
 
     // Get plugin
@@ -201,5 +202,15 @@ public class PluginController : ControllerBase
     {
         return string.Equals(userId, GetUserId(), StringComparison.OrdinalIgnoreCase);
     }
+
+    private async Task<PluginsGetResponse> GetUserPlugins()
+    {
+        var plugins = await pluginRepository
+            .Get(GetUserId())
+            .ToListAsync();
+
+        return mapper.Map<PluginsGetResponse>(plugins);
+    }
+
     #endregion
 }
