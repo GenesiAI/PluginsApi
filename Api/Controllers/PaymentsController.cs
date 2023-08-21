@@ -21,13 +21,7 @@ public class PaymentsController : AuthController
         var priceId = "price_1NWcI7KxWQlpnUKopF95YKY3";
         StripeConfiguration.ApiKey = "sk_test_51NUpR6KxWQlpnUKojYJKdYUbkU7bLtIzrNcuQYfljorsomr5g1VRq5qbQUYgE7WiCExKkVpLEWRk8qpOsWkgXozZ00tM5Nl6M0";
 
-        // recycle existing pending checkout when possible
-        var pendingCheckout = await _subscriptionRepository.GetPendingCheckout(userId);
-        var checkoutSessionId = pendingCheckout?.CheckoutSessionId;
-        if (checkoutSessionId != null)
-        {
-            return Ok(new { checkoutSessionId = checkoutSessionId });
-        }
+        // do not recycle existing pending checkout: https://stripe.com/docs/api/checkout/sessions#:~:text=We%20recommend%20creating%20a%20new%20Session%20each%20time%20your%20customer%20attempts%20to%20pay.
 
         var options = new SessionCreateOptions
         {

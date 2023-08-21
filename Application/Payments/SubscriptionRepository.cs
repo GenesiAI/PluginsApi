@@ -114,11 +114,4 @@ public class SubscriptionRepository
             .Where(c => c.CheckoutSessionId == checkoutId)
             .FirstOrDefaultAsync();
     }
-    // GetPendingCheckout
-    public async Task<Checkout?> GetPendingCheckout(string userId)
-    {
-        return await _context.Checkouts
-            .Where(c => c.UserId == userId && c.Status == "pending")
-            .FirstOrDefaultAsync();
-    }
 }
