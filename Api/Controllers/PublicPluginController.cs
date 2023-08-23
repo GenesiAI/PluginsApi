@@ -92,7 +92,7 @@ public class PublicPluginController : Controller
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new OperationException("Error contacting the service " + response.StatusCode + " " + response.ReasonPhrase);
+            throw new InvalidOperationException("Error contacting the service " + response.StatusCode + " " + response.ReasonPhrase);
         }
         return Ok();
     }
