@@ -1,20 +1,28 @@
-﻿using AiPlugin.Domain;
+﻿using AiPlugin.Application.Plugins;
+using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-
 namespace AiPlugin.Application.Plugins;
-public class PluginRepository : IBaseRepository<Plugin>
+
+public class PluginRepository : IPluginRepository
 {
     private readonly AiPluginDbContext dbContext;
+    private readonly SubscriptionRepository subscriptionRepository;
 
-    public PluginRepository(AiPluginDbContext dbContext)
+    public PluginRepository(AiPluginDbContext dbContext, SubscriptionRepository subscriptionRepository)
     {
         this.dbContext = dbContext;
+        this.subscriptionRepository = subscriptionRepository;
     }
 
-    public async Task<Plugin> Add(Plugin entity, CancellationToken cancellationToken = default)
+    public async Task<Plugin> Add(Plugin entity, string userId, CancellationToken cancellationToken = default)
     {
-        await dbContext.Plugins.AddAsync(entity, cancellationToken);
+        if (await HasReachedPluginQuota(userId))
+        {
+            throw new Exception("Max plugins reached");
+        }
+        entity.IsActive = true;
+        dbContext.Plugins.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
     }
@@ -37,6 +45,15 @@ public class PluginRepository : IBaseRepository<Plugin>
         return entity;
     }
 
+    public async Task<Plugin> GetByUserId(string userid, CancellationToken cancellationToken = default)
+    {
+        var entity = await dbContext.Plugins.Include(x => x.Sections).SingleOrDefaultAsync(x => x.UserId == userid, cancellationToken);
+        if (entity is null || entity.isDeleted)
+            throw new KeyNotFoundException($"Plugin with userid {userid} not found");
+        entity.Sections = entity.Sections?.Where(x => !x.isDeleted);
+        return entity;
+    }
+
     public async Task<Plugin> Update(Plugin entity, CancellationToken cancellationToken = default)
     {
         dbContext.Plugins.Update(entity);
@@ -54,4 +71,11 @@ public class PluginRepository : IBaseRepository<Plugin>
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<bool> HasReachedPluginQuota(string userId)
+    {
+        var countTask = Get().CountAsync();
+        var isPremiumTask = subscriptionRepository.IsUserPremium(userId);
+        await Task.WhenAll(countTask, isPremiumTask);
+        return countTask.Result < (isPremiumTask.Result ? 10 : 3);
+    }
 }

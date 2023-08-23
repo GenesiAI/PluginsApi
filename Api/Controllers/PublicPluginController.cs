@@ -1,7 +1,6 @@
-using AiPlugin.Api.Dto;
 using AiPlugin.Application.Plugins;
-using AiPlugin.Domain;
-using AiPlugin.Domain.Manifest;
+using AiPlugin.Domain.Common.Manifest;
+using AiPlugin.Domain.Plugin;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
@@ -11,12 +10,19 @@ namespace AiPlugin.Api.Controllers;
 
 //public stuffs
 [ApiController]
-public class PublicPluginController : AuthBase.Controllers.AuthController
+public class PublicPluginController : Controller
 {
     private readonly int millisecondsDelay = 700;
-    public PublicPluginController(SubscriptionRepository subscriptionRepository, IBaseRepository<Plugin> pluginRepository, IMapper mapper)
-        : base(subscriptionRepository, pluginRepository, mapper)
+    private readonly SubscriptionRepository subscriptionRepository;
+    private readonly IPluginRepository pluginRepository;
+    private readonly IMapper mapper;
+
+    public PublicPluginController(SubscriptionRepository subscriptionRepository, IPluginRepository pluginRepository, IMapper mapper)
+        : base()
     {
+        this.subscriptionRepository = subscriptionRepository;
+        this.pluginRepository = pluginRepository;
+        this.mapper = mapper;
     }
 
     [HttpGet(".well-known/ai-plugin.json")]
@@ -25,11 +31,8 @@ public class PublicPluginController : AuthBase.Controllers.AuthController
     {
         try
         {
-            AppPlugin appPlugin = GetPlugin(pluginId);
-            if ( ! appPlugin.IsActive ) return Unauthorized();
-
-            Plugin plugin = mapper.Map<Plugin>(appPlugin);
-            
+            var plugin = await pluginRepository.Get(pluginId);
+            if (!plugin.IsActive) return NotFound();
             return Ok(mapper.Map<Plugin, AiPluginManifest>(plugin));
         }
         catch (KeyNotFoundException)
@@ -44,10 +47,9 @@ public class PublicPluginController : AuthBase.Controllers.AuthController
     {
         try
         {
-            AppPlugin appPlugin = GetPlugin(pluginId);
-            if ( ! appPlugin.IsActive ) return Unauthorized();
-            
-            Plugin plugin = mapper.Map<Plugin>(appPlugin);
+            var plugin = await pluginRepository.Get(pluginId);
+            if (!plugin.IsActive) return NotFound();
+
             var result = mapper.Map<Plugin, OpenApiDocument>(plugin);
 
             using (var writer = new StringWriter())
@@ -72,30 +74,27 @@ public class PublicPluginController : AuthBase.Controllers.AuthController
     [PluginIdFromSubdomain]
     public async Task<ActionResult<Section>> GetSection(string sectionName, [OpenApiParameterIgnore] Guid pluginId)
     {
-        Plugin plugin;
         try
         {
-            AppPlugin appPlugin = GetPlugin(pluginId);
-            if (!appPlugin.IsActive) return Unauthorized();
+            var plugin = await pluginRepository.Get(pluginId);
+            if (!plugin.IsActive) return NotFound();
 
-            plugin = mapper.Map<Plugin>(appPlugin);
+            if (!await subscriptionRepository.IsUserPremium(plugin.UserId))
+            {
+                await Task.Delay(millisecondsDelay);
+            }
+
+            var section = plugin!.Sections?.SingleOrDefault(s => s.Name == sectionName);
+            if (section?.isDeleted == false)
+            {
+                return NotFound();
+            }
+            return Ok(section);
+            // return mapper.Map<Section, TextValue>(plugin); todo
         }
         catch (KeyNotFoundException)
         {
             return NotFound();
         }
-        
-        if ( ! userHasActiveSubscription(plugin.UserId) )
-        {
-            await Task.Delay(millisecondsDelay);
-        }
-
-        var section = plugin!.Sections?.SingleOrDefault(s => s.Name == sectionName);
-        if (section?.isDeleted == false)
-        {
-            return NotFound();
-        }
-        return Ok(section);
-        // return mapper.Map<Section, TextValue>(plugin); todo
     }
 }

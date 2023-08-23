@@ -1,170 +1,196 @@
-using Stripe;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Stripe;
 using Stripe.Checkout;
-using AuthBase.Controllers;
 
 [Route("api/[controller]")]
-public class PaymentsController : AuthController
+public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
 {
-    const string endpointSecret = "whsec_c5eec0c1be214329f59549fb146423d6acb33d75363f4eab0541acf1d52c190f";
-    public PaymentsController(SubscriptionRepository subscriptionRepository)
-        : base(subscriptionRepository)
+    private readonly ILogger<PaymentsController> logger;
+    private readonly SubscriptionRepository subscriptionRepository;
+    private readonly StripeSettings stripeSettings;
+    private readonly string frontendUrl;
+
+    public PaymentsController(ILogger<PaymentsController> logger, SubscriptionRepository subscriptionRepository,
+        StripeSettings stripeSettings, string frontendUrl) : base()
     {
+        this.logger = logger;
+        this.subscriptionRepository = subscriptionRepository;
+        this.stripeSettings = stripeSettings;
+        this.frontendUrl = frontendUrl;
     }
 
+    [Authorize]
     [HttpGet("intent")]
     public async Task<IActionResult> CreateCheckoutSession()
     {
         var userId = GetUserId();
-        // customer can be null if it's the first time that the user is subscribing
-        
-        var priceId = "price_1NWcI7KxWQlpnUKopF95YKY3";
-        StripeConfiguration.ApiKey = "sk_test_51NUpR6KxWQlpnUKojYJKdYUbkU7bLtIzrNcuQYfljorsomr5g1VRq5qbQUYgE7WiCExKkVpLEWRk8qpOsWkgXozZ00tM5Nl6M0";
+        logger.LogInformation($"Creating checkout session for user {userId}");
+        StripeConfiguration.ApiKey = stripeSettings.ApiKey;
 
+        var isPremium = await subscriptionRepository.IsUserPremium(userId);
+        if (isPremium)
+        {
+            return BadRequest("User is already premium");
+        }
+
+        // customer can be null if it's the first time that the user is subscribing
         // recycle existing pending checkout when possible
-        var pendingCheckout = await _subscriptionRepository.GetPendingCheckout(userId);
+        var pendingCheckout = await subscriptionRepository.GetCheckout(userId);
         var checkoutSessionId = pendingCheckout?.CheckoutSessionId;
         if (checkoutSessionId != null)
         {
-            return Ok(new { checkoutSessionId = checkoutSessionId });
+            return Ok(new { checkoutSessionId });
         }
 
-        var options = new SessionCreateOptions
-        {
-            // See https://stripe.com/docs/api/checkout/sessions/create
-            SuccessUrl = "https://genesi.ai/success",
-            CancelUrl = "https://genesi.ai/manage-subscriptions/cancelled",
-            Mode = "subscription",
-            LineItems = new List<SessionLineItemOptions>
-            {
-                new SessionLineItemOptions
-                {
-                    Price = priceId,
-                    // For metered billing, do not pass quantity
-                    Quantity = 1,
-                },
-            }
-        };
-        var customer = await _subscriptionRepository.GetCustomerByUserId(userId);
-        if (customer != null)
-        {
-            options.Customer = customer.CustomerId;
-        }
-
-        var service = new SessionService();
-        var session = await service.CreateAsync(options);
+        var options = await BuildSessionOptions(userId);
+        var session = await new SessionService().CreateAsync(options);
 
         // save row in checkouts
         var checkout = new Checkout
         {
             CheckoutSessionId = session.Id,
             UserId = userId,
-            Status = "pending",
+            Status = CheckoutStatuses.Pending,
         };
-        await _subscriptionRepository.AddCheckout(checkout);
+        await subscriptionRepository.AddCheckout(checkout);
 
         // if GET was requested using flag ?automatic=false, return the session id; otherwise redirect to the checkout page
         if (Request.Query.ContainsKey("automatic") && Request.Query["automatic"] == "false")
         {
             return Ok(new { checkoutSessionId = session.Id });
         }
-        else
-        {
-            Response.Headers.Add("Location", session.Url);
-            return new StatusCodeResult(303);
-        }
+        return Ok(session.Url);
     }
 
-    // This endpoint is used by Stripe to send webhook events
-    [HttpPost("webhook")]
-    public async Task<IActionResult> HandleWebhook()
+    private async Task<SessionCreateOptions> BuildSessionOptions(string userId)
     {
-        var json = await new StreamReader(HttpContext.Request.Body).ReadToEndAsync();
+        var lastSubscription = await subscriptionRepository.GetLastSubscriptionByUserId(userId);
+        var options = new SessionCreateOptions
+        {
+            SuccessUrl = $"{frontendUrl}success",
+            CancelUrl = $"{frontendUrl}manage-subscriptions/cancelled",
+            Mode = "subscription",
+            Customer = lastSubscription?.CustomerId,
+            LineItems = new List<SessionLineItemOptions>
+            {
+                new SessionLineItemOptions
+                {
+                    Price = stripeSettings.PremiumPriceId,
+                    // For metered billing, do not pass quantity
+                    Quantity = 1,
+                },
+            }
+        };
+        return options;
+    }
+
+    /// <summary>
+    /// This endpoint is called by Stripe to send events
+    /// </summary>
+    [HttpPost("webhook")]
+    public async Task<IActionResult> HandleWebhook([FromBody] string content)
+    {
         try
         {
-            var stripeEvent = EventUtility.ConstructEvent(json,
-                Request.Headers["Stripe-Signature"], endpointSecret);
+            var stripeEvent = EventUtility.ConstructEvent(content, Request.Headers["Stripe-Signature"], stripeSettings.WebHookSecret);
+            logger.LogInformation($"Webhook called with type {stripeEvent.Type}");
 
-            // Handle the event
-            switch (stripeEvent.Type) {
+            switch (stripeEvent.Type)
+            {
                 case Events.CheckoutSessionExpired:
-                // user has abandoned the checkout
-                // mark the checkout as expired in the database
-                var sessionToDelete = stripeEvent.Data.Object as Session;
-                var checkoutToDelete = await _subscriptionRepository.GetCheckout(sessionToDelete.Id);
-                checkoutToDelete.Status = "expired";
-                await _subscriptionRepository.UpdateCheckout(checkoutToDelete);
-                break;
+                    // if the checkout session has expired, mark the checkout as expired
+
+                    var checkout = await GetCheckoutFromEvent(stripeEvent);
+                    if (checkout == null)
+                    {
+                        return BadRequest();
+                    }
+                    checkout.Status = CheckoutStatuses.Failed;
+                    await subscriptionRepository.UpdateCheckout(checkout);
+                    return Ok();    // return a 200 response so that Stripe doesn't retry the webhook
 
                 case Events.CheckoutSessionCompleted:
-                // user has created their session by paying
-                var sessionCreated = stripeEvent.Data.Object as Session;
-                // find the session row in the database
-                var completedCheckout = await _subscriptionRepository.GetCheckout(sessionCreated.Id);
-                // update the checkout row in the database
-                completedCheckout.Status = "completed";
-                await _subscriptionRepository.UpdateCheckout(completedCheckout);
-                // we now know the UserId
-                var userId = completedCheckout.UserId;
-                // find the customer row in the database
-                var customer = await _subscriptionRepository.GetCustomerByUserId(userId);
-                // if the customer row doesn't exist, create it
-                if (customer == null)
-                {
-                    var customerId = sessionCreated.Customer.Id;
-                    var newCustomer = new Customer
+
+                    var completedCheckout = await GetCheckoutFromEvent(stripeEvent);
+                    if (completedCheckout == null)
                     {
-                        UserId = userId,
-                        CustomerId = customerId,
-                    };
-                    await _subscriptionRepository.AddCustomer(newCustomer);
-                }
-                // find the subscription row in the database
-                var subscription = await _subscriptionRepository.GetSubscriptionByUserId(userId);
-                // if the subscription row doesn't exist, create it
-                if (subscription == null)
-                {
-                    var subscriptionId = sessionCreated.Subscription.Id;
-                    var status = sessionCreated.Subscription.Status;
-                    var expiresOn = sessionCreated.Subscription.CurrentPeriodEnd;
-                    var eventTime = stripeEvent.Created;
-                    var newSubscription = new Subscription
+                        return BadRequest();
+                    }
+                    completedCheckout.Status = CheckoutStatuses.Success;
+                    await subscriptionRepository.UpdateCheckout(completedCheckout);
+
+                    var session = stripeEvent.Data.Object as Session;
+
+                    var subscription = await subscriptionRepository.GetSubscription(session!.Subscription.Id);
+                    if (subscription == null)
                     {
-                        SubscriptionId = subscriptionId,
-                        UserId = userId,
-                        CustomerId = customer.CustomerId,
-                        Status = status,
-                        ExpiresOn = expiresOn,
-                        EventTime = eventTime,
-                    };
-                    await _subscriptionRepository.AddSubscription(newSubscription);
-                }
-                // if the subscription row does exist, update it
-                else
-                {
-                    var status = sessionCreated.Subscription.Status;
-                    var expiresOn = sessionCreated.Subscription.CurrentPeriodEnd;
-                    var eventTime = stripeEvent.Created;
-                    subscription.Status = status;
-                    subscription.ExpiresOn = expiresOn;
-                    subscription.EventTime = eventTime;
-                    await _subscriptionRepository.UpdateSubscription(subscription);
-                }
-                break;
-                
-                case Events.CustomerSubscriptionCreated: case Events.CustomerSubscriptionDeleted: case Events.CustomerSubscriptionUpdated:
-                // log the whole object to the console
-                Console.WriteLine(stripeEvent.Data.Object);
-                break;
+                        var newSubscription = new Subscription
+                        {
+                            Id = session!.Subscription.Id,
+                            UserId = completedCheckout.UserId,
+                            CustomerId = session!.Subscription.CustomerId,
+                            Status = session.Subscription.Status.ToSubscriptionStatus(),
+                            ExpiresOn = session.Subscription.CurrentPeriodEnd,
+                            CreatedOn = stripeEvent.Created, //todo unix time, need to convert to uct?
+                        };
+                        await subscriptionRepository.AddSubscription(newSubscription);
+                        return Ok();
+                    }
+
+                    subscription.CustomerId = session!.Subscription.CustomerId;
+                    subscription.Status = session.Subscription.Status.ToSubscriptionStatus();
+                    subscription.ExpiresOn = session.Subscription.CurrentPeriodEnd;
+
+                    await subscriptionRepository.UpdateSubscription(subscription);
+                    return Ok();
+
+                // case Events.CustomerSubscriptionCreated:
+                case Events.CustomerSubscriptionDeleted:
+                case Events.CustomerSubscriptionPaused:
+                case Events.CustomerSubscriptionPendingUpdateApplied:
+                case Events.CustomerSubscriptionPendingUpdateExpired:
+                case Events.CustomerSubscriptionTrialWillEnd:
+                case Events.CustomerSubscriptionResumed:
+                case Events.CustomerSubscriptionUpdated:
+                    if (stripeEvent.Data.Object is not Session subscriptionEvent)
+                    {
+                        return BadRequest();
+                    }
+                    var subscriptionToUpdate = await subscriptionRepository.GetSubscription(subscriptionEvent.Id);
+                    if (subscriptionToUpdate == null)
+                    {
+                        return BadRequest();
+                    }
+                    subscriptionToUpdate.Status = subscriptionEvent.Subscription.Status.ToSubscriptionStatus();
+                    await subscriptionRepository.UpdateSubscription(subscriptionToUpdate);
+                    break;
                 default:
-                Console.WriteLine("Unhandled event type: {0}", stripeEvent.Type);
-                break;
+                    logger.LogWarning("Unhandled event type: {0}", stripeEvent.Type);
+                    break;
             }
             return Ok();
         }
-        catch (StripeException e)
+        catch (StripeException)
         {
             return BadRequest();
         }
     }
+    private async Task<Checkout?> GetCheckoutFromEvent(Event stripeEvent)
+    {
+        var session = stripeEvent.Data.Object as Session;
+        if (session?.Id == null)
+        {
+            logger.LogError("CheckoutSessionExpired: sessionToDelete.Id is null");
+            return null;
+        }
+        var checkout = await subscriptionRepository.GetCheckout(session.Id);
+        if (checkout == null)
+        {
+            logger.LogError($"CheckoutSessionExpired: checkoutToDelete is null for session {session.Id}");
+            return null;
+        }
+        return checkout;
+    }
 }
+

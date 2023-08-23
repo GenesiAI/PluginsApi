@@ -1,6 +1,5 @@
-using AiPlugin.Application.Old.OpenAi.Models;
 using AiPlugin.Application.Plugins;
-using AiPlugin.Domain;
+using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +12,7 @@ builder.Logging.AddConsole();
 
 var version = "1.2.2"; //pluginId and admin subdomain management with authenticated users
 AddServices(builder, version);
+AddConfigrations(builder);
 
 var app = builder.Build();
 
@@ -76,7 +76,7 @@ static void AddServices(WebApplicationBuilder builder, string version)
     });
 
 
-    builder.Services.AddScoped<IBaseRepository<Plugin>, PluginRepository>();
+    builder.Services.AddScoped<IPluginRepository, PluginRepository>();
     builder.Services.AddScoped<SubscriptionRepository>();
 
     builder.Services.AddAuthentication(options => { options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; })
@@ -102,10 +102,11 @@ static void AddServices(WebApplicationBuilder builder, string version)
     builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 }
 
+void AddConfigrations(WebApplicationBuilder builder)
+{
+    var stripeSettings = new StripeSettings();
+    builder.Configuration.GetSection("StripeSettings").Bind(stripeSettings);
+    builder.Services.AddSingleton(stripeSettings);
 
-// public class StripeSettings
-// {
-//     public string WebHookSecret = null!;
-//     public string PremiumPriceId = null!;
-//     public string ApiKey = null!;
-// }
+    builder.Services.AddSingleton(x => x.GetRequiredService<IConfiguration>().GetValue<string>("FrontendDomain")!);
+}

@@ -1,124 +1,120 @@
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
+// public interface ISubscriptionRepository{
+
+// }
+
 public class SubscriptionRepository
 {
-    private readonly AiPluginDbContext _context;
+    private readonly AiPluginDbContext context;
 
     public SubscriptionRepository(AiPluginDbContext context)
     {
-        _context = context;
+        this.context = context;
     }
-    public async Task<Subscription> GetSubscriptionByUserId(string userId)
+
+    public async Task<Subscription?> GetLastSubscriptionByUserId(string userId)
     {
-        return await _context.Subscriptions
+        return await context.Subscriptions
             .Where(s => s.UserId == userId)
-            .OrderByDescending(s => s.ExpiresOn)  // get the latest subscription
+            .OrderByDescending(s => s.ExpiresOn)
             .FirstOrDefaultAsync();
     }
+
+    public async Task<List<Subscription>> GetSubscriptionsByUserId(string userId)
+    {
+        return await context.Subscriptions
+            .Where(s => s.UserId == userId)
+            .OrderByDescending(s => s.ExpiresOn)
+            .ToListAsync();
+    }
+
+    public async Task<Subscription> GetSubscription(string id)
+    {
+        return await context.Subscriptions
+            .FindAsync(id) ?? throw new KeyNotFoundException(nameof(id));
+    }
+
     public async Task AddSubscription(Subscription subscription)
     {
-        if (subscription == null)
+        ArgumentNullException.ThrowIfNull(subscription);
+        await context.Subscriptions.AddAsync(subscription);
+
+        var plugins = await context.Plugins
+            .Where(p => p.UserId == subscription.UserId)
+            .OrderByDescending(p => p.CreationDateTime)
+            .AsTracking()
+            .ToListAsync();
+        foreach (var plugin in plugins)
         {
-            throw new ArgumentNullException(nameof(subscription));
+            plugin.IsActive = plugins.IndexOf(plugin) < 3 || subscription.Status == SubscriptionStatus.Active;
         }
 
-        await _context.Subscriptions.AddAsync(subscription);
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
     }
     public async Task UpdateSubscription(Subscription subscription)
     {
-        if (subscription == null)
-        {
-            throw new ArgumentNullException(nameof(subscription));
-        }
+        ArgumentNullException.ThrowIfNull(subscription);
+        context.Subscriptions.Update(subscription);
 
-        _context.Subscriptions.Update(subscription);
-        await _context.SaveChangesAsync();
+        var plugins = await context.Plugins
+            .Where(p => p.UserId == subscription.UserId)
+            .OrderByDescending(p => p.CreationDateTime)
+            .AsTracking()
+            .ToListAsync();
+
+        foreach (var plugin in plugins)
+        {
+            plugin.IsActive = plugins.IndexOf(plugin) < 3 || subscription.Status == SubscriptionStatus.Active;
+        }
+        await context.SaveChangesAsync();
     }
+
+    #region Checkout
     public async Task AddCheckout(Checkout checkout)
     {
-        if (checkout == null)
-        {
-            throw new ArgumentNullException(nameof(checkout));
-        }
-
-        await _context.Checkouts.AddAsync(checkout);
-        await _context.SaveChangesAsync();
+        ArgumentNullException.ThrowIfNull(checkout);
+        await context.Checkouts.AddAsync(checkout);
+        await context.SaveChangesAsync();
     }
-    // updatecheckout
+
     public async Task UpdateCheckout(Checkout checkout)
     {
-        if (checkout == null)
-        {
-            throw new ArgumentNullException(nameof(checkout));
-        }
-
-        _context.Checkouts.Update(checkout);
-        await _context.SaveChangesAsync();
+        ArgumentNullException.ThrowIfNull(checkout);
+        context.Checkouts.Update(checkout);
+        await context.SaveChangesAsync();
     }
-    // deletecheckout by checkoutid
+
     public async Task DeleteCheckout(string checkoutId)
     {
-        var checkout = await _context.Checkouts.FindAsync(checkoutId);
+        ArgumentNullException.ThrowIfNull(checkoutId);
+
+        var checkout = await context.Checkouts.FindAsync(checkoutId);
         if (checkout == null)
         {
-            throw new ArgumentNullException(nameof(checkout));
+            throw new KeyNotFoundException(nameof(checkout));
         }
 
-        _context.Checkouts.Remove(checkout);
-        await _context.SaveChangesAsync();
+        context.Checkouts.Remove(checkout);
+        await context.SaveChangesAsync();
     }
-    // AddCustomer
-    public async Task<Customer> AddCustomer(Customer customer)
-    {
-        if (customer == null)
-        {
-            throw new ArgumentNullException(nameof(customer));
-        }
 
-        await _context.Customers.AddAsync(customer);
-        await _context.SaveChangesAsync();
-        return customer;
-    }
-    // updatecustomer
-    public async Task<Customer> UpdateCustomer(Customer customer)
-    {
-        if (customer == null)
-        {
-            throw new ArgumentNullException(nameof(customer));
-        }
-
-        _context.Customers.Update(customer);
-        await _context.SaveChangesAsync();
-        return customer;
-    }
-    // getcustomerbyuserid
-    public async Task<Customer?> GetCustomerByUserId(string userId)
-    {
-        return await _context.Customers
-            .Where(c => c.UserId == userId)
-            .FirstOrDefaultAsync();
-    }
-    // get customer by customer id
-    public async Task<Customer?> GetCustomerByCustomerId(string customerId)
-    {
-        return await _context.Customers
-            .Where(c => c.CustomerId == customerId)
-            .FirstOrDefaultAsync();
-    }
-    // getcheckout
     public async Task<Checkout?> GetCheckout(string checkoutId)
     {
-        return await _context.Checkouts
+        return await context.Checkouts
             .Where(c => c.CheckoutSessionId == checkoutId)
-            .FirstOrDefaultAsync();
+            .SingleOrDefaultAsync();
     }
-    // GetPendingCheckout
-    public async Task<Checkout?> GetPendingCheckout(string userId)
+
+    #endregion
+
+    public async Task<bool> IsUserPremium(string userId)
     {
-        return await _context.Checkouts
-            .Where(c => c.UserId == userId && c.Status == "pending")
-            .FirstOrDefaultAsync();
+        return await context.Subscriptions
+            .Where(s => s.UserId == userId
+                && s.ExpiresOn > DateTime.UtcNow
+                && s.Status == SubscriptionStatus.Active)
+            .AnyAsync();
     }
 }

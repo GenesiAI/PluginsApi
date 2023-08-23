@@ -22,7 +22,7 @@ namespace AiPlugin.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("AiPlugin.Domain.Plugin", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.Plugin", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -44,6 +44,9 @@ namespace AiPlugin.Migrations
                         .IsRequired()
                         .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LegalInfoUrl")
                         .IsRequired()
@@ -75,7 +78,7 @@ namespace AiPlugin.Migrations
                     b.ToTable("Plugins");
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Section", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.Section", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -114,9 +117,8 @@ namespace AiPlugin.Migrations
                     b.Property<string>("CheckoutSessionId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -127,58 +129,43 @@ namespace AiPlugin.Migrations
                     b.ToTable("Checkouts");
                 });
 
-            modelBuilder.Entity("Customer", b =>
-                {
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("CustomerId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("Customers");
-                });
-
             modelBuilder.Entity("Subscription", b =>
                 {
-                    b.Property<string>("SubscriptionId")
+                    b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CustomerId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("EventTime")
-                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("ExpiresOn")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("SubscriptionId");
+                    b.HasKey("Id");
 
                     b.ToTable("Subscriptions");
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Section", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.Section", b =>
                 {
-                    b.HasOne("AiPlugin.Domain.Plugin", null)
+                    b.HasOne("AiPlugin.Domain.Plugin.Plugin", null)
                         .WithMany("Sections")
                         .HasForeignKey("PluginId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Plugin", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.Plugin", b =>
                 {
                     b.Navigation("Sections");
                 });
