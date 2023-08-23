@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddConsole();
 
-var version = "1.2.2"; //pluginId and admin subdomain management with authenticated users
+var version = "1.2.4"; //payments
 AddServices(builder, version);
 AddConfigrations(builder);
 

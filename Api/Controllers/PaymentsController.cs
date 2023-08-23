@@ -28,6 +28,7 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
         logger.LogInformation($"Creating checkout session for user {userId}");
         StripeConfiguration.ApiKey = stripeSettings.ApiKey;
 
+<<<<<<< HEAD
         var isPremium = await subscriptionRepository.IsUserPremium(userId);
         if (isPremium)
         {
@@ -42,6 +43,9 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
         {
             return Ok(new { checkoutSessionId });
         }
+=======
+        // do not recycle existing pending checkout: https://stripe.com/docs/api/checkout/sessions#:~:text=We%20recommend%20creating%20a%20new%20Session%20each%20time%20your%20customer%20attempts%20to%20pay.
+>>>>>>> 93c54ccc1088e955f6e683c8c8093e508ce7f392
 
         var options = await BuildSessionOptions(userId);
         var session = await new SessionService().CreateAsync(options);
@@ -145,7 +149,7 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                     await subscriptionRepository.UpdateSubscription(subscription);
                     return Ok();
 
-                // case Events.CustomerSubscriptionCreated:
+                //case Events.CustomerSubscriptionCreated:
                 case Events.CustomerSubscriptionDeleted:
                 case Events.CustomerSubscriptionPaused:
                 case Events.CustomerSubscriptionPendingUpdateApplied:
