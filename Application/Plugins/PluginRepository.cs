@@ -1,4 +1,5 @@
-﻿using AiPlugin.Application.Plugins;
+using AiPlugin.Application.Plugins;
+using System.Text.RegularExpressions;
 using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +18,7 @@ public class PluginRepository : IPluginRepository
 
     public async Task<Plugin> Add(Plugin entity, string userId, CancellationToken cancellationToken = default)
     {
+        CheckPlugin(entity);
         if (await HasReachedPluginQuota(userId))
         {
             throw new Exception("Max plugins reached");
@@ -27,12 +29,19 @@ public class PluginRepository : IPluginRepository
         return entity;
     }
 
+    public IQueryable<Plugin> Get(string userId, CancellationToken cancellationToken = default)
+    {
+        return Get(cancellationToken)
+            .Where(x => x.UserId == userId)
+            .AsQueryable();
+
+    }
+
     public IQueryable<Plugin> Get(CancellationToken cancellationToken = default)
     {
         return dbContext
             .Plugins
             .Include(x => x.Sections)
-            .OrderBy(x => x.CreationDateTime)
             .Where(x => !x.isDeleted).AsQueryable();
     }
 
@@ -56,6 +65,7 @@ public class PluginRepository : IPluginRepository
 
     public async Task<Plugin> Update(Plugin entity, CancellationToken cancellationToken = default)
     {
+        CheckPlugin(entity);
         dbContext.Plugins.Update(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
@@ -77,5 +87,11 @@ public class PluginRepository : IPluginRepository
         var isPremiumTask = subscriptionRepository.IsUserPremium(userId);
         await Task.WhenAll(countTask, isPremiumTask);
         return countTask.Result < (isPremiumTask.Result ? 10 : 3);
+    }
+    private void CheckPlugin(Plugin entity)
+    {
+        //run  [a-zA-Z][a-zA-Z0-9_]*
+        if (!Regex.IsMatch(entity.NameForModel, "^[a-zA-Z][a-zA-Z0-9_]*$"))
+            throw new ArgumentException("NameForModel must be in [a-zA-Z][a-zA-Z0-9_]* format");
     }
 }

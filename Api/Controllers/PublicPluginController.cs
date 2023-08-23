@@ -2,9 +2,11 @@ using AiPlugin.Application.Plugins;
 using AiPlugin.Domain.Common.Manifest;
 using AiPlugin.Domain.Plugin;
 using AutoMapper;
+using Utilities.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -16,13 +18,21 @@ public class PublicPluginController : Controller
     private readonly SubscriptionRepository subscriptionRepository;
     private readonly IPluginRepository pluginRepository;
     private readonly IMapper mapper;
+    private readonly IHttpClientFactory httpClientFactory;
+    private readonly ContactSetting contactSettings;
 
-    public PublicPluginController(SubscriptionRepository subscriptionRepository, IPluginRepository pluginRepository, IMapper mapper)
-        : base()
+    public PublicPluginController(
+        IPluginRepository pluginRepository,
+        SubscriptionRepository subscriptionRepository,
+        IMapper mapper,
+        IHttpClientFactory httpClientFactory,
+        ContactSetting contactSettings)
     {
         this.subscriptionRepository = subscriptionRepository;
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
+        this.httpClientFactory = httpClientFactory;
+        this.contactSettings = contactSettings;
     }
 
     [HttpGet(".well-known/ai-plugin.json")]
@@ -70,6 +80,24 @@ public class PublicPluginController : Controller
         }
     }
 
+    /// <summary>
+    /// Echoes the the contact request to the service that handles it hinding the key, basically proxy.
+    /// </summary>
+
+    [HttpPost("contact")]
+    public async Task<IActionResult> Contact(ContactFormRequest contactRequest)
+    {
+        var client = httpClientFactory.CreateClient();
+        var response = await client.PostAsJsonAsync(contactSettings.Url, contactRequest);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new OperationException("Error contacting the service " + response.StatusCode + " " + response.ReasonPhrase);
+        }
+        return Ok();
+    }
+
+
     [HttpGet("{sectionName}")]
     [PluginIdFromSubdomain]
     public async Task<ActionResult<Section>> GetSection(string sectionName, [OpenApiParameterIgnore] Guid pluginId)
@@ -85,7 +113,7 @@ public class PublicPluginController : Controller
             }
 
             var section = plugin!.Sections?.SingleOrDefault(s => s.Name == sectionName);
-            if (section?.isDeleted == false)
+            if (section?.isDeleted != false)
             {
                 return NotFound();
             }
