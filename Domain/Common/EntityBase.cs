@@ -1,4 +1,4 @@
-namespace AiPlugin.Domain
+namespace AiPlugin.Domain.Common
 {
     public class EntityBase
     {

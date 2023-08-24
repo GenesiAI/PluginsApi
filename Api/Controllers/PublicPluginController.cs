@@ -1,6 +1,6 @@
 using AiPlugin.Application.Plugins;
-using AiPlugin.Domain;
-using AiPlugin.Domain.Manifest;
+using AiPlugin.Domain.Common.Manifest;
+using AiPlugin.Domain.Plugin;
 using AutoMapper;
 using Utilities.Dto;
 using Microsoft.AspNetCore.Mvc;
@@ -12,17 +12,23 @@ namespace AiPlugin.Api.Controllers;
 
 //public stuffs
 [ApiController]
-public class PublicPluginController : ControllerBase
+public class PublicPluginController : Controller
 {
-    private readonly IPluginRepository pluginRepository;
     private readonly int millisecondsDelay = 700;
+    private readonly SubscriptionRepository subscriptionRepository;
+    private readonly IPluginRepository pluginRepository;
     private readonly IMapper mapper;
     private readonly IHttpClientFactory httpClientFactory;
     private readonly ContactSetting contactSettings;
 
-    public PublicPluginController(IPluginRepository pluginRepository, IMapper mapper, IHttpClientFactory httpClientFactory,
+    public PublicPluginController(
+        IPluginRepository pluginRepository,
+        SubscriptionRepository subscriptionRepository,
+        IMapper mapper,
+        IHttpClientFactory httpClientFactory,
         ContactSetting contactSettings)
     {
+        this.subscriptionRepository = subscriptionRepository;
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
         this.httpClientFactory = httpClientFactory;
@@ -30,12 +36,13 @@ public class PublicPluginController : ControllerBase
     }
 
     [HttpGet(".well-known/ai-plugin.json")]
-    [PlugindFromSubdomain]
+    [PluginIdFromSubdomain]
     public async Task<ActionResult<AiPluginManifest>> GetManifest([OpenApiParameterIgnore] Guid pluginId)
     {
         try
         {
             var plugin = await pluginRepository.Get(pluginId);
+            if (!plugin.IsActive) return NotFound();
             return Ok(mapper.Map<Plugin, AiPluginManifest>(plugin));
         }
         catch (KeyNotFoundException)
@@ -45,12 +52,14 @@ public class PublicPluginController : ControllerBase
     }
 
     [HttpGet("openapi.json")]
-    [PlugindFromSubdomain]
+    [PluginIdFromSubdomain]
     public async Task<IActionResult> GetOpenAPISpecification([OpenApiParameterIgnore] Guid pluginId)
     {
         try
         {
             var plugin = await pluginRepository.Get(pluginId);
+            if (!plugin.IsActive) return NotFound();
+
             var result = mapper.Map<Plugin, OpenApiDocument>(plugin);
 
             using (var writer = new StringWriter())
@@ -83,34 +92,37 @@ public class PublicPluginController : ControllerBase
 
         if (!response.IsSuccessStatusCode)
         {
-            throw new OperationException("Error contacting the service " + response.StatusCode + " " + response.ReasonPhrase);
+            throw new InvalidOperationException("Error contacting the service " + response.StatusCode + " " + response.ReasonPhrase);
         }
         return Ok();
     }
 
 
     [HttpGet("{sectionName}")]
-    [PlugindFromSubdomain]
+    [PluginIdFromSubdomain]
     public async Task<ActionResult<Section>> GetSection(string sectionName, [OpenApiParameterIgnore] Guid pluginId)
     {
-        //todo if the section require authenticated users check for authentication
-        await Task.Delay(millisecondsDelay);
-        Plugin plugin;
         try
         {
-            plugin = await pluginRepository.Get(pluginId);
+            var plugin = await pluginRepository.Get(pluginId);
+            if (!plugin.IsActive) return NotFound();
+
+            if (!await subscriptionRepository.IsUserPremium(plugin.UserId))
+            {
+                await Task.Delay(millisecondsDelay);
+            }
+
+            var section = plugin!.Sections?.SingleOrDefault(s => s.Name == sectionName);
+            if (section?.isDeleted != false)
+            {
+                return NotFound();
+            }
+            return Ok(section);
+            // return mapper.Map<Section, TextValue>(plugin); todo
         }
         catch (KeyNotFoundException)
         {
             return NotFound();
         }
-
-        var section = plugin!.Sections?.SingleOrDefault(s => s.Name == sectionName);
-        if (section?.isDeleted != false)
-        {
-            return NotFound();
-        }
-        return Ok(section);
-        // return mapper.Map<Section, TextValue>(plugin); todo
     }
 }

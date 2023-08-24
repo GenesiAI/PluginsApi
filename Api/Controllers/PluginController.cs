@@ -1,11 +1,11 @@
+using System.Net;
 using AiPlugin.Api.Dto;
 using AiPlugin.Application.Plugins;
-using AiPlugin.Domain;
+using AiPlugin.Domain.Plugin;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -14,32 +14,42 @@ namespace AiPlugin.Api.Controllers;
 [Route("api/plugins")]
 public class PluginController : ControllerBase
 {
+    private readonly SubscriptionRepository subscriptionRepository;
     private readonly IPluginRepository pluginRepository;
     private readonly IMapper mapper;
-    public PluginController(IPluginRepository pluginRepository, IMapper mapper)
+
+    public PluginController(SubscriptionRepository subscriptionRepository, IPluginRepository pluginRepository, IMapper mapper)
+        : base()
     {
+        this.subscriptionRepository = subscriptionRepository;
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
     }
 
-    // Create plugin
     [HttpPost]
     public async Task<ActionResult<Plugin>> CreatePlugin([FromBody] PluginCreateRequest request)
     {
-        var plugins = await GetUserPlugins();
-        if (plugins.PluginsCount >= plugins.MaxPlugins) return BadRequest("Max plugins reached");
+        string userId = GetUserId();
+
+        if (!await pluginRepository.HasReachedPluginQuota(userId))
+            return BadRequest("Max plugins reached");
 
         var plugin = mapper.Map<Plugin>(request);
-        plugin.UserId = GetUserId();
-        var createdPlugin = await pluginRepository.Add(plugin);
+        plugin.UserId = userId;
+        var createdPlugin = await pluginRepository.Add(plugin, userId);
+
         return CreatedAtAction(nameof(CreatePlugin), new { userId = createdPlugin.UserId, pluginId = createdPlugin.Id }, createdPlugin);
     }
 
-    // Get plugins
     [HttpGet]
-    public async Task<ActionResult<PluginsGetResponse>> GetPlugins()
+    public async Task<ActionResult<PluginsResponse>> GetPlugins()
     {
-        return Ok(await GetUserPlugins());
+        string userId = GetUserId();
+        var plugins = await pluginRepository.Get().ToListAsync();
+
+        var result = mapper.Map<PluginsResponse>(plugins);
+        result.MaxPlugins = await subscriptionRepository.IsUserPremium(userId) ? 10 : 3;
+        return Ok(result);
     }
 
     // Get plugin
@@ -48,8 +58,7 @@ public class PluginController : ControllerBase
     {
         try
         {
-            var plugin = await pluginRepository.Get(pluginId);
-            return Ok(plugin);
+            return Ok(await GetPlugin(pluginId));
         }
         catch (KeyNotFoundException)
         {
@@ -190,27 +199,4 @@ public class PluginController : ControllerBase
             return NotFound();
         }
     }
-
-    #region private methods
-    private string GetUserId()
-    {
-        var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (id != null) return id;
-        throw new UnauthorizedAccessException("UserId not found");
-    }
-    private bool IsMatchingAuthenticatedUserId(string userId)
-    {
-        return string.Equals(userId, GetUserId(), StringComparison.OrdinalIgnoreCase);
-    }
-
-    private async Task<PluginsGetResponse> GetUserPlugins()
-    {
-        var plugins = await pluginRepository
-            .Get(GetUserId())
-            .ToListAsync();
-
-        return mapper.Map<PluginsGetResponse>(plugins);
-    }
-
-    #endregion
 }

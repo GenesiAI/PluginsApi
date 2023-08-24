@@ -17,12 +17,12 @@ namespace AiPlugin.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.5")
+                .HasAnnotation("ProductVersion", "7.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("AiPlugin.Domain.Plugin", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.Plugin", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -31,6 +31,9 @@ namespace AiPlugin.Migrations
                     b.Property<string>("ContactEmail")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreationDateTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("DescriptionForHuman")
                         .IsRequired()
@@ -41,6 +44,9 @@ namespace AiPlugin.Migrations
                         .IsRequired()
                         .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LegalInfoUrl")
                         .IsRequired()
@@ -72,7 +78,7 @@ namespace AiPlugin.Migrations
                     b.ToTable("Plugins");
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Section", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.Section", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -90,8 +96,8 @@ namespace AiPlugin.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("PluginId")
                         .HasColumnType("uniqueidentifier");
@@ -106,16 +112,60 @@ namespace AiPlugin.Migrations
                     b.ToTable("Sections");
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Section", b =>
+            modelBuilder.Entity("Checkout", b =>
                 {
-                    b.HasOne("AiPlugin.Domain.Plugin", null)
+                    b.Property<string>("CheckoutSessionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CheckoutSessionId");
+
+                    b.ToTable("Checkouts");
+                });
+
+            modelBuilder.Entity("Subscription", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExpiresOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Subscriptions");
+                });
+
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.Section", b =>
+                {
+                    b.HasOne("AiPlugin.Domain.Plugin.Plugin", null)
                         .WithMany("Sections")
                         .HasForeignKey("PluginId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Plugin", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.Plugin", b =>
                 {
                     b.Navigation("Sections");
                 });

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace AiPlugin.Domain.Manifest
+namespace AiPlugin.Domain.Common.Manifest
 {
     // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
     public class Api

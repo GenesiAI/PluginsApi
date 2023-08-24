@@ -1,6 +1,6 @@
 ﻿using AiPlugin.Application.Old.Models.CompletitonPrompt;
 using AiPlugin.Application.Old.OpenAi.Models;
-using AiPlugin.Domain;
+using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using System.Text;

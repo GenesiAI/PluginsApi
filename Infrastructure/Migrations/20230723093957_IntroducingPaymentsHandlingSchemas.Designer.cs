@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
-    [Migration("20230507180616_added is deleted")]
-    partial class Addedisdeleted
+    [Migration("20230723093957_IntroducingPaymentsHandlingSchemas")]
+    partial class IntroducingPaymentsHandlingSchemas
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.5")
+                .HasAnnotation("ProductVersion", "7.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -35,12 +35,17 @@ namespace AiPlugin.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreationDateTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("DescriptionForHuman")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("DescriptionForModel")
                         .IsRequired()
+                        .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LegalInfoUrl")
@@ -53,18 +58,17 @@ namespace AiPlugin.Migrations
 
                     b.Property<string>("NameForHuman")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("NameForModel")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("OriginalText")
+                    b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("isDeleted")
                         .HasColumnType("bit");
@@ -82,15 +86,18 @@ namespace AiPlugin.Migrations
 
                     b.Property<string>("Content")
                         .IsRequired()
+                        .HasMaxLength(100000)
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("PluginId")
                         .HasColumnType("uniqueidentifier");
@@ -103,6 +110,66 @@ namespace AiPlugin.Migrations
                     b.HasIndex("PluginId");
 
                     b.ToTable("Sections");
+                });
+
+            modelBuilder.Entity("Checkout", b =>
+                {
+                    b.Property<string>("CheckoutSessionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CheckoutSessionId");
+
+                    b.ToTable("Checkouts");
+                });
+
+            modelBuilder.Entity("Customer", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("Subscription", b =>
+                {
+                    b.Property<string>("SubscriptionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("EventTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SubscriptionId");
+
+                    b.ToTable("Subscriptions");
                 });
 
             modelBuilder.Entity("AiPlugin.Domain.Section", b =>
