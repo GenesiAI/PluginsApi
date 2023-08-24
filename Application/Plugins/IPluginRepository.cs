@@ -1,3 +1,4 @@
+using AiPlugin.Application.common;
 using AiPlugin.Domain.Plugin;
 
 namespace AiPlugin.Application.Plugins;

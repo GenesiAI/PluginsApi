@@ -1,7 +1,7 @@
 using AiPlugin.Domain.Common;
 using AiPlugin.Domain.Plugin;
 
-namespace AiPlugin.Application.Plugins;
+namespace AiPlugin.Application.common;
 
 public interface IBaseRepository<T> where T : EntityBase
 {

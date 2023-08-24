@@ -2,11 +2,12 @@ using AiPlugin.Application.Plugins;
 using AiPlugin.Domain.Common.Manifest;
 using AiPlugin.Domain.Plugin;
 using AutoMapper;
-using Utilities.Dto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Writers;
 using Microsoft.EntityFrameworkCore.Design;
+using AiPlugin.Api.Dto;
+using AiPlugin.Api.Settings;
 
 namespace AiPlugin.Api.Controllers;
 

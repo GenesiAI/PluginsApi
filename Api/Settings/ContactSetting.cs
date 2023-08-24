@@ -1,4 +1,4 @@
-﻿namespace AiPlugin.Api.Controllers
+﻿namespace AiPlugin.Api.Settings
 {
     public class ContactSetting
     {
