@@ -13,7 +13,7 @@ namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
     [Migration("20230529185740_changed userid type")]
-    partial class changeduseridtype
+    partial class Changeduseridtype
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

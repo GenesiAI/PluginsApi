@@ -13,7 +13,7 @@ namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
     [Migration("20230607164818_added columns sizes")]
-    partial class addedcolumnssizes
+    partial class Addedcolumnssizes
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

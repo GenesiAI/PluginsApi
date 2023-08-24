@@ -1,4 +1,4 @@
-﻿using AiPlugin.Domain;
+﻿using AiPlugin.Domain.Plugin;
 
 namespace AiPlugin.Application.Old
 {

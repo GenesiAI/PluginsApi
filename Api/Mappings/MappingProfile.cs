@@ -1,6 +1,6 @@
 ﻿using AiPlugin.Api.Dto;
-using AiPlugin.Domain;
-using AiPlugin.Domain.Manifest;
+using AiPlugin.Domain.Common.Manifest;
+using AiPlugin.Domain.Plugin;
 using AutoMapper;
 using Microsoft.OpenApi.Models;
 
@@ -29,7 +29,7 @@ public class MappingProfile : Profile
             {
                 dest.Paths = new OpenApiPaths();
 
-                foreach (var section in src.Sections?? new List<Section>())
+                foreach (var section in src.Sections ?? new List<Section>())
                 {
                     dest.Paths.Add($"/{section.Name}", new OpenApiPathItem
                     {
@@ -113,10 +113,10 @@ public class MappingProfile : Profile
         CreateMap<SectionCreateRequest, Section>();
         CreateMap<SectionUpdateRequest, Section>();
 
-        CreateMap<IEnumerable<Plugin>, PluginsGetResponse>()
+        CreateMap<IEnumerable<Plugin>, PluginsResponse>()
             .ForMember(dest => dest.PluginsCount, opt => opt.MapFrom(src => src.Count()))
-            .ForMember(dest => dest.MaxPlugins, opt => opt.MapFrom(src => 3))
             .ForMember(dest => dest.Plugins, opt => opt.MapFrom(src => src));
+
     }
 
     private string GetBaseUrl()

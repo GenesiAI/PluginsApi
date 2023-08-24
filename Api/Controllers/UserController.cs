@@ -1,31 +1,27 @@
-// using AutoMapper;
-// using Microsoft.AspNetCore.Mvc;
-// using Microsoft.OpenApi.Models;
-// using AiPlugin.Application;
-// using AiPlugin.Domain.Manifest;
-// using AiPlugin.Domain;
-// using AiPlugin.Infrastructure;
+﻿using Microsoft.AspNetCore.Mvc;
+using AiPlugin.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
+using AiPlugin.Api.Dto;
 
-// namespace AiPlugin.Api.Controllers
-// {
-//     [ApiController]
-//     [Route("[controller]")]
-//     public class UserController : ControllerBase
-//     {
-//         public AiPluginDbContext TempConte { get; }
+namespace AiPlugin.Api.Controllers;
 
-//         public UserController(AiPluginDbContext tempConte)
-//         {
-//             TempConte = tempConte;
-//         }
+[Authorize]
+[ApiController]
+[Route("api/[controller]")]
+public class UserController : ControllerBase
+{
+    private readonly SubscriptionRepository subscriptionRepository;
 
-//         [HttpPost]
-//         public async Task<Guid> CreateUser()
-//         {
-//             await Task.Delay(2000);
-//             TempConte.Users.Add(user);
-//             await TempConte.SaveChangesAsync();
-//             return user;
-//         }
-//     }
-// }
+    public UserController(SubscriptionRepository subscriptionRepository)
+    {
+        this.subscriptionRepository = subscriptionRepository;
+    }
+
+    [HttpGet]
+    public async Task<UserInfo> GetUserInfo()
+    {
+
+        var isPremium = await subscriptionRepository.IsUserPremium(GetUserId());
+        return new UserInfo() { IsPremium = isPremium };
+    }
+}

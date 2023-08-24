@@ -1,6 +1,7 @@
+using AiPlugin.Domain.Common;
 using System.ComponentModel.DataAnnotations;
 
-namespace AiPlugin.Domain;
+namespace AiPlugin.Domain.Plugin;
 
 // each section has an id, name, description and a content
 public class Section : EntityBase, IDeleted

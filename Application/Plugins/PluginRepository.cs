@@ -1,22 +1,30 @@
-﻿using System.Text.RegularExpressions;
-using AiPlugin.Domain;
+using AiPlugin.Application.Plugins;
+using System.Text.RegularExpressions;
+using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-
 namespace AiPlugin.Application.Plugins;
+
 public class PluginRepository : IPluginRepository
 {
     private readonly AiPluginDbContext dbContext;
+    private readonly SubscriptionRepository subscriptionRepository;
 
-    public PluginRepository(AiPluginDbContext dbContext)
+    public PluginRepository(AiPluginDbContext dbContext, SubscriptionRepository subscriptionRepository)
     {
         this.dbContext = dbContext;
+        this.subscriptionRepository = subscriptionRepository;
     }
 
-    public async Task<Plugin> Add(Plugin entity, CancellationToken cancellationToken = default)
+    public async Task<Plugin> Add(Plugin entity, string userId, CancellationToken cancellationToken = default)
     {
         CheckPlugin(entity);
-        await dbContext.Plugins.AddAsync(entity, cancellationToken);
+        if (await HasReachedPluginQuota(userId))
+        {
+            throw new Exception("Max plugins reached");
+        }
+        entity.IsActive = true;
+        dbContext.Plugins.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         return entity;
     }
@@ -34,8 +42,7 @@ public class PluginRepository : IPluginRepository
         return dbContext
             .Plugins
             .Include(x => x.Sections)
-            .Where(x => !x.isDeleted)
-            .AsQueryable();
+            .Where(x => !x.isDeleted).AsQueryable();
     }
 
     public async Task<Plugin> Get(Guid id, CancellationToken cancellationToken = default)
@@ -43,6 +50,15 @@ public class PluginRepository : IPluginRepository
         var entity = await dbContext.Plugins.Include(x => x.Sections).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (entity is null || entity.isDeleted)
             throw new KeyNotFoundException($"Plugin with id {id} not found");
+        entity.Sections = entity.Sections?.Where(x => !x.isDeleted);
+        return entity;
+    }
+
+    public async Task<Plugin> GetByUserId(string userid, CancellationToken cancellationToken = default)
+    {
+        var entity = await dbContext.Plugins.Include(x => x.Sections).SingleOrDefaultAsync(x => x.UserId == userid, cancellationToken);
+        if (entity is null || entity.isDeleted)
+            throw new KeyNotFoundException($"Plugin with userid {userid} not found");
         entity.Sections = entity.Sections?.Where(x => !x.isDeleted);
         return entity;
     }
@@ -65,6 +81,13 @@ public class PluginRepository : IPluginRepository
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task<bool> HasReachedPluginQuota(string userId)
+    {
+        var countTask = Get().CountAsync();
+        var isPremiumTask = subscriptionRepository.IsUserPremium(userId);
+        await Task.WhenAll(countTask, isPremiumTask);
+        return countTask.Result < (isPremiumTask.Result ? 10 : 3);
+    }
     private void CheckPlugin(Plugin entity)
     {
         //run  [a-zA-Z][a-zA-Z0-9_]*

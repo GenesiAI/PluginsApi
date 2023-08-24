@@ -5,7 +5,7 @@
 namespace AiPlugin.Migrations
 {
     /// <inheritdoc />
-    public partial class addedcolumnssizes : Migration
+    public partial class Addedcolumnssizes : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
