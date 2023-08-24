@@ -1,4 +1,5 @@
 using AiPlugin.Api.Controllers;
+using AiPlugin.Api.Settings;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
