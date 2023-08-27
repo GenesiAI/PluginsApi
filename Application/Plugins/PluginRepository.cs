@@ -29,14 +29,6 @@ public class PluginRepository : IPluginRepository
         return entity;
     }
 
-    public IQueryable<Plugin> Get(string userId, CancellationToken cancellationToken = default)
-    {
-        return Get(cancellationToken)
-            .Where(x => x.UserId == userId)
-            .AsQueryable();
-
-    }
-
     public IQueryable<Plugin> Get(CancellationToken cancellationToken = default)
     {
         return dbContext

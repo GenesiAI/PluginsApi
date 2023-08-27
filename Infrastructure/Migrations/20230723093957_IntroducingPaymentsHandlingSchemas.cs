@@ -33,7 +33,7 @@ namespace AiPlugin.Migrations
                 {
                     CheckoutSessionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Status = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -58,7 +58,7 @@ namespace AiPlugin.Migrations
                 {
                     SubscriptionId = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
                     ExpiresOn = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CustomerId = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     EventTime = table.Column<DateTime>(type: "datetime2", nullable: false)

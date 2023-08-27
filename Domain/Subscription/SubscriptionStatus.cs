@@ -26,33 +26,33 @@ public enum SubscriptionStatus
     /// <summary>
     /// a subscription moves into incomplete if the initial payment attempt fails
     /// </summary>
-    Incomplete,
+    Incomplete =0,
     /// <summary>
     /// a subscription moves into incomplete_expired if the initial payment attempt fails and the subscription is not paid within 23 hours
     /// </summary>
-    IncompleteExpired,
+    IncompleteExpired = 1,
     /// <summary>
     /// a subscription that is currently in a trial period is trialing and moves to active when the trial period is over
     /// </summary>
-    Trialing,
+    Trialing = 2,
     /// <summary>
     /// a subscription moves into active when the first invoice is paid
     /// </summary>
-    Active,
+    Active = 3,
     /// <summary>
     /// a subscription becomes past_due when payment is required but cannot be paid (due to failed payment or awaiting additional user actions)
     /// </summary>
-    PastDue,
+    PastDue = 4,
 
     /// <summary>
     /// a subscription becomes canceled when Stripe has exhausted all payment retry attempts.         
     /// </summary>
-    Canceled,
+    Canceled = 5,
 
     /// <summary>
     /// a subscription becomes unpaid when its invoice is not paid by the due date
     /// </summary>
-    Unpaid
+    Unpaid = 6
 }
 
 public static class StringExtensions

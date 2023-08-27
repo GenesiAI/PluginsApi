@@ -23,28 +23,12 @@ namespace AiPlugin.Migrations
                 table: "Subscriptions",
                 newName: "Id");
 
-            migrationBuilder.AlterColumn<int>(
-                name: "Status",
-                table: "Subscriptions",
-                type: "int",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
-
             migrationBuilder.AddColumn<bool>(
                 name: "IsActive",
                 table: "Plugins",
                 type: "bit",
                 nullable: false,
                 defaultValue: false);
-
-            migrationBuilder.AlterColumn<int>(
-                name: "Status",
-                table: "Checkouts",
-                type: "int",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
         }
 
         /// <inheritdoc />
@@ -63,22 +47,6 @@ namespace AiPlugin.Migrations
                 name: "Id",
                 table: "Subscriptions",
                 newName: "SubscriptionId");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Status",
-                table: "Subscriptions",
-                type: "nvarchar(max)",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "int");
-
-            migrationBuilder.AlterColumn<string>(
-                name: "Status",
-                table: "Checkouts",
-                type: "nvarchar(max)",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "int");
 
             migrationBuilder.CreateTable(
                 name: "Customers",

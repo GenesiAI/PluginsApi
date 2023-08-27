@@ -45,7 +45,7 @@ public class PluginController : ControllerBase
     public async Task<ActionResult<PluginsResponse>> GetPlugins()
     {
         string userId = GetUserId();
-        var plugins = await pluginRepository.Get().ToListAsync();
+        var plugins = await pluginRepository.GetByUserId(userId);
 
         var result = mapper.Map<PluginsResponse>(plugins);
         result.MaxPlugins = await subscriptionRepository.IsUserPremium(userId) ? 10 : 3;

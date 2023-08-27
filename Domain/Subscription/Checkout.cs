@@ -12,7 +12,7 @@ public class Checkout
 
 public enum CheckoutStatuses
 {
-    Pending,
-    Success,
-    Failed,
+    Pending = 1,
+    Success = 2,
+    Failed = 3,
 }
