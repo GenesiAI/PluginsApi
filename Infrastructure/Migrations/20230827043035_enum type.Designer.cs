@@ -13,7 +13,7 @@ namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
     [Migration("20230827043035_enum type")]
-    partial class enumtype
+    partial class EnumType
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

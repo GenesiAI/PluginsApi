@@ -5,7 +5,7 @@
 namespace AiPlugin.Migrations
 {
     /// <inheritdoc />
-    public partial class enumtype : Migration
+    public partial class EnumType : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
