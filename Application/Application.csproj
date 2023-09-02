@@ -5,6 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>AiPlugin.Application</RootNamespace>
+    <OutputType>Library</OutputType>
+
   </PropertyGroup>
 
   <ItemGroup>

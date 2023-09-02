@@ -5,7 +5,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>AiPlugin.Infrastructure</RootNamespace>
-    
+    <OutputType>Library</OutputType>
+
   </PropertyGroup>
 
   <ItemGroup>
