@@ -14,7 +14,7 @@ namespace AiPlugin.Infrastructure
         public DbSet<Section> Sections { get; set; } = null!;
 
         // tables for handling subscriptions and interactions with Stripe:
-        public DbSet<Checkout> Checkouts { get; set; }
+        //public DbSet<Checkout> Checkouts { get; set; }
         // public DbSet<Customer> Customers { get; set; }
         public DbSet<Subscription> Subscriptions { get; set; }
 

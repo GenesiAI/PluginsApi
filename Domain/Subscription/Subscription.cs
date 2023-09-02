@@ -1,6 +1,8 @@
-public partial class Subscription
+using AiPlugin.Domain.Common;
+
+public partial class Subscription : EntityBase
 {
-    public string Id { get; set; } = null!;
+    public string SubscriptionId { get; set; } = null!;
 
     public string UserId { get; set; } = null!;
 
