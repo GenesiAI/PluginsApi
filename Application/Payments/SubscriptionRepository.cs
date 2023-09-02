@@ -91,12 +91,12 @@ public class SubscriptionRepository
 
     public async Task<bool> IsUserPremium(string userId)
     {
-        return (await context.Subscriptions         //take the subscriptions
+        var result = await context.Subscriptions         //take the subscriptions
             .Where(s => s.UserId == userId          //of the user
                 && s.ExpiresOn > DateTime.UtcNow)   //that are not expired
-            .OrderByDescending(s => s.CreatedOn)              
-            .FirstAsync()                           //take the last added
-            ).Status == SubscriptionStatus.Active;  //and check if it is active
+            .OrderByDescending(s => s.CreatedOn)
+            .FirstOrDefaultAsync();                           //take the last added
+        return result?.Status == SubscriptionStatus.Active;  //and check if it is active
     }
 
     //#region Checkout
