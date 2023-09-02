@@ -58,7 +58,7 @@ public class PluginController : ControllerBase
     {
         try
         {
-            return Ok(await GetPlugin(pluginId));
+            return Ok(await pluginRepository.Get(pluginId));
         }
         catch (KeyNotFoundException)
         {
