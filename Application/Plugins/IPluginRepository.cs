@@ -5,6 +5,6 @@ namespace AiPlugin.Application.Plugins;
 
 public interface IPluginRepository : IBaseRepository<Plugin>
 {
-    public Task<Plugin> GetByUserId(string userid, CancellationToken cancellationToken = default);
+    public Task<IEnumerable<Plugin>> GetByUserId(string userid, CancellationToken cancellationToken = default);
     public Task<bool> HasReachedPluginQuota(string userId);
 }
