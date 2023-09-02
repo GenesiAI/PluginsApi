@@ -18,7 +18,7 @@ public class SubscriptionRepository
     {
         return await context.Subscriptions
             .Where(s => s.UserId == userId)
-            .OrderByDescending(s => s.ExpiresOn)
+            .OrderByDescending(s => s.CreatedOn)
             .FirstOrDefaultAsync();
     }
 
@@ -26,7 +26,7 @@ public class SubscriptionRepository
     {
         return await context.Subscriptions
             .Where(s => s.UserId == userId)
-            .OrderByDescending(s => s.ExpiresOn)
+            .OrderByDescending(s => s.CreatedOn)
             .ToListAsync();
     }
 
@@ -53,68 +53,88 @@ public class SubscriptionRepository
 
         await context.SaveChangesAsync();
     }
-    public async Task UpdateSubscription(Subscription subscription)
-    {
-        ArgumentNullException.ThrowIfNull(subscription);
-        context.Subscriptions.Update(subscription);
+    // public async Task UpdateSubscription(Subscription subscription)
+    // {
+    //     ArgumentNullException.ThrowIfNull(subscription);
+    //     context.Subscriptions.Update(subscription);
 
-        var plugins = await context.Plugins
-            .Where(p => p.UserId == subscription.UserId)
-            .OrderByDescending(p => p.CreationDateTime)
-            .AsTracking()
-            .ToListAsync();
+    //     var plugins = await context.Plugins
+    //         .Where(p => p.UserId == subscription.UserId)
+    //         .OrderByDescending(p => p.CreationDateTime)
+    //         .AsTracking()
+    //         .ToListAsync();
 
-        foreach (var plugin in plugins)
-        {
-            plugin.IsActive = plugins.IndexOf(plugin) < 3 || subscription.Status == SubscriptionStatus.Active;
-        }
-        await context.SaveChangesAsync();
-    }
+    //     foreach (var plugin in plugins)
+    //     {
+    //         plugin.IsActive = plugins.IndexOf(plugin) < 3 || subscription.Status == SubscriptionStatus.Active;
+    //     }
+    //     await context.SaveChangesAsync();
+    // }
 
-    #region Checkout
-    public async Task AddCheckout(Checkout checkout)
-    {
-        ArgumentNullException.ThrowIfNull(checkout);
-        await context.Checkouts.AddAsync(checkout);
-        await context.SaveChangesAsync();
-    }
 
-    public async Task UpdateCheckout(Checkout checkout)
-    {
-        ArgumentNullException.ThrowIfNull(checkout);
-        context.Checkouts.Update(checkout);
-        await context.SaveChangesAsync();
-    }
+    // public async Task CreateOrUpdateSubscription(Subscription SubscriptiontoSearch)
+    // {
+    //     var subscription = await context.Subscriptions.FindAsync(SubscriptiontoSearch.Id);
+    //     if (subscription == null)
+    //     {
+    //         await AddSubscription(SubscriptiontoSearch);
+    //         return;
+    //     }
 
-    public async Task DeleteCheckout(string checkoutId)
-    {
-        ArgumentNullException.ThrowIfNull(checkoutId);
+    //     subscription.CustomerId = SubscriptiontoSearch.CustomerId;
+    //     subscription.Status = SubscriptiontoSearch.Status;
+    //     subscription.ExpiresOn = SubscriptiontoSearch.ExpiresOn;
 
-        var checkout = await context.Checkouts.FindAsync(checkoutId);
-        if (checkout == null)
-        {
-            throw new KeyNotFoundException(nameof(checkout));
-        }
-
-        context.Checkouts.Remove(checkout);
-        await context.SaveChangesAsync();
-    }
-
-    public async Task<Checkout?> GetCheckout(string checkoutId)
-    {
-        return await context.Checkouts
-            .Where(c => c.CheckoutSessionId == checkoutId)
-            .SingleOrDefaultAsync();
-    }
-
-    #endregion
+    //     await UpdateSubscription(subscription);
+    //     return;
+    // }
 
     public async Task<bool> IsUserPremium(string userId)
     {
-        return await context.Subscriptions
-            .Where(s => s.UserId == userId
-                && s.ExpiresOn > DateTime.UtcNow
-                && s.Status == SubscriptionStatus.Active)
-            .AnyAsync();
+        return (await context.Subscriptions         //take the subscriptions
+            .Where(s => s.UserId == userId          //of the user
+                && s.ExpiresOn > DateTime.UtcNow)   //that are not expired
+            .OrderByDescending(s => s.CreatedOn)              
+            .FirstAsync()                           //take the last added
+            ).Status == SubscriptionStatus.Active;  //and check if it is active
     }
+
+    //#region Checkout
+    //public async Task AddCheckout(Checkout checkout)
+    //{
+    //    ArgumentNullException.ThrowIfNull(checkout);
+    //    await context.Checkouts.AddAsync(checkout);
+    //    await context.SaveChangesAsync();
+    //}
+
+    //public async Task UpdateCheckout(Checkout checkout)
+    //{
+    //    ArgumentNullException.ThrowIfNull(checkout);
+    //    context.Checkouts.Update(checkout);
+    //    await context.SaveChangesAsync();
+    //}
+
+    //public async Task DeleteCheckout(string checkoutId)
+    //{
+    //    ArgumentNullException.ThrowIfNull(checkoutId);
+
+    //    var checkout = await context.Checkouts.FindAsync(checkoutId);
+    //    if (checkout == null)
+    //    {
+    //        throw new KeyNotFoundException(nameof(checkout));
+    //    }
+
+    //    context.Checkouts.Remove(checkout);
+    //    await context.SaveChangesAsync();
+    //}
+
+    //public async Task<Checkout?> GetCheckout(string checkoutId)
+    //{
+    //    return await context.Checkouts
+    //        .Where(c => c.CheckoutSessionId == checkoutId)
+    //        .SingleOrDefaultAsync();
+    //}
+
+    //#endregion
+
 }
