@@ -5,7 +5,7 @@
 namespace AiPlugin.Migrations
 {
     /// <inheritdoc />
-    public partial class addedisdeleted : Migration
+    public partial class Addedisdeleted : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

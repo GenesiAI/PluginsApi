@@ -5,7 +5,7 @@
 namespace AiPlugin.Migrations
 {
     /// <inheritdoc />
-    public partial class changeduseridtype : Migration
+    public partial class Changeduseridtype : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

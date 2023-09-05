@@ -5,7 +5,7 @@
 namespace AiPlugin.Migrations
 {
     /// <inheritdoc />
-    public partial class removedoriginaltext : Migration
+    public partial class Removedoriginaltext : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

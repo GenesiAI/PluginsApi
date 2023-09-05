@@ -13,7 +13,7 @@ namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
     [Migration("20230507182105_removed original text")]
-    partial class removedoriginaltext
+    partial class Removedoriginaltext
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

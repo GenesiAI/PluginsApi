@@ -13,7 +13,7 @@ namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
     [Migration("20230507180616_added is deleted")]
-    partial class addedisdeleted
+    partial class Addedisdeleted
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

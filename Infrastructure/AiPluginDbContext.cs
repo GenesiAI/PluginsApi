@@ -1,4 +1,4 @@
-using AiPlugin.Domain;
+using AiPlugin.Domain.Plugin;
 using Microsoft.EntityFrameworkCore;
 
 namespace AiPlugin.Infrastructure
@@ -9,8 +9,14 @@ namespace AiPlugin.Infrastructure
         {
         }
 
+        // Genesi app core tables:
         public DbSet<Plugin> Plugins { get; set; } = null!;
         public DbSet<Section> Sections { get; set; } = null!;
+
+        // tables for handling subscriptions and interactions with Stripe:
+        //public DbSet<Checkout> Checkouts { get; set; }
+        // public DbSet<Customer> Customers { get; set; }
+        public DbSet<Subscription> Subscriptions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

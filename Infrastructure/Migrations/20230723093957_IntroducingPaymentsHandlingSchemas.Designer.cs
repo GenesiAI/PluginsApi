@@ -4,6 +4,7 @@ using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
-    partial class AiPluginDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230723093957_IntroducingPaymentsHandlingSchemas")]
+    partial class IntroducingPaymentsHandlingSchemas
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,7 +25,7 @@ namespace AiPlugin.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("AiPlugin.Domain.Plugin.Plugin", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -44,9 +47,6 @@ namespace AiPlugin.Migrations
                         .IsRequired()
                         .HasMaxLength(8000)
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
 
                     b.Property<string>("LegalInfoUrl")
                         .IsRequired()
@@ -78,7 +78,7 @@ namespace AiPlugin.Migrations
                     b.ToTable("Plugins");
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Plugin.Section", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Section", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -112,48 +112,76 @@ namespace AiPlugin.Migrations
                     b.ToTable("Sections");
                 });
 
-            modelBuilder.Entity("Subscription", b =>
+            modelBuilder.Entity("Checkout", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("CheckoutSessionId")
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CustomerId")
+                    b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ExpiresOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
                         .HasColumnType("int");
-
-                    b.Property<string>("SubscriptionId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("CheckoutSessionId");
+
+                    b.ToTable("Checkouts");
+                });
+
+            modelBuilder.Entity("Customer", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("Subscription", b =>
+                {
+                    b.Property<string>("SubscriptionId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("EventTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiresOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .IsRequired()
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("SubscriptionId");
 
                     b.ToTable("Subscriptions");
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Plugin.Section", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Section", b =>
                 {
-                    b.HasOne("AiPlugin.Domain.Plugin.Plugin", null)
+                    b.HasOne("AiPlugin.Domain.Plugin", null)
                         .WithMany("Sections")
                         .HasForeignKey("PluginId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("AiPlugin.Domain.Plugin.Plugin", b =>
+            modelBuilder.Entity("AiPlugin.Domain.Plugin", b =>
                 {
                     b.Navigation("Sections");
                 });

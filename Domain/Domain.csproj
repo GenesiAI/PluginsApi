@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>AiPlugin.Domain</RootNamespace>
+    <OutputType>Library</OutputType>
   </PropertyGroup>
 
 </Project>
