@@ -109,7 +109,8 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                     {
                         return BadRequest("failed to get userid from metadata");
                     }
-                    
+
+                    StripeConfiguration.ApiKey = stripeSettings.ApiKey;
                     var service = new SubscriptionService();
                     var subscription = await service.GetAsync(updatedSubscription.Id);
                     await subscriptionRepository.UpsertSubscription(
@@ -132,12 +133,12 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
         }
         catch (StripeException stripeException)
         {
-            logger.LogCritical(stripeException, "Exception while trying to handle stripe event");
+            logger.LogCritical(stripeException, "Exception while trying to handle stripe event: " + stripeException.Message);
             throw;
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "Exception while trying to handle stripe event");
+            logger.LogCritical(ex, "Exception while trying to handle stripe event: " + ex.Message);
             throw;
         }
     }
