@@ -59,6 +59,9 @@ public class SubscriptionRepository
         ArgumentNullException.ThrowIfNull(subscription);
         context.Subscriptions.Update(subscription);
 
+        // Use IsUserPremium method to check if the user is premium
+        bool isPremium = await IsUserPremium(subscription.UserId);
+
         var plugins = await context.Plugins
             .Where(p => p.UserId == subscription.UserId)
             .OrderByDescending(p => p.CreationDateTime)
@@ -67,7 +70,8 @@ public class SubscriptionRepository
 
         foreach (var plugin in plugins)
         {
-            plugin.IsActive = plugins.IndexOf(plugin) < 3 || subscription.Status == SubscriptionStatus.Active;
+            // Use the isPremium variable to determine if the user is premium
+            plugin.IsActive = plugins.IndexOf(plugin) < 3 || isPremium;
         }
         await context.SaveChangesAsync();
     }
