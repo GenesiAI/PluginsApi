@@ -36,7 +36,26 @@ public class SubscriptionRepository
             .FindAsync(id) ?? throw new KeyNotFoundException(nameof(id));
     }
 
-    public async Task AddSubscription(Subscription subscription)
+    public async Task UpsertSubscription(Subscription subscription)
+    {
+        ArgumentNullException.ThrowIfNull(subscription);
+        var existingSubscription = await context.Subscriptions.FindAsync(subscription.Id);
+        if (existingSubscription == null)
+        {
+            await AddSubscription(subscription);
+            return;
+        }
+
+        existingSubscription.CustomerId = subscription.CustomerId;
+        existingSubscription.Status = subscription.Status;
+        existingSubscription.ExpiresOn = subscription.ExpiresOn;
+
+        await UpdateSubscription(existingSubscription);
+        
+        return;
+    }
+
+    private async Task AddSubscription(Subscription subscription)
     {
         ArgumentNullException.ThrowIfNull(subscription);
         await context.Subscriptions.AddAsync(subscription);
@@ -54,12 +73,11 @@ public class SubscriptionRepository
         await context.SaveChangesAsync();
     }
     
-    public async Task UpdateSubscription(Subscription subscription)
+    private async Task UpdateSubscription(Subscription subscription)
     {
         ArgumentNullException.ThrowIfNull(subscription);
         context.Subscriptions.Update(subscription);
 
-        // Use IsUserPremium method to check if the user is premium
         bool isPremium = await IsUserPremium(subscription.UserId);
 
         var plugins = await context.Plugins

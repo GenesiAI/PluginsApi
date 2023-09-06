@@ -125,35 +125,6 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                 //    await subscriptionRepository.UpdateCheckout(completedCheckout);
                 //    return Ok();
 
-                case Events.CustomerSubscriptionCreated:
-                    if (stripeEvent.Data.Object is not Stripe.Subscription newSubscription)
-                    {
-                        return BadRequest("failed to cast event");
-                    }
-                    if (!newSubscription.Metadata.TryGetValue("UserId", out var creatorId))
-                    {
-                        return BadRequest("failed to get userid from metadata");
-                    }
-
-                    var lastCreatorSubscription = await subscriptionRepository.GetLastSubscriptionByUserId(creatorId);
-                    if (lastCreatorSubscription != null)
-                    {
-                        // if the user already has a subscription, probably the event to activate it was fired before this one, so just ignore this event
-                        return Ok();
-                    }
-
-                    await subscriptionRepository.AddSubscription(
-                         new Subscription()
-                         {
-                             SubscriptionId = newSubscription!.Id,
-                             UserId = creatorId!,
-                             CustomerId = newSubscription.CustomerId,
-                             Status = newSubscription.Status.ToSubscriptionStatus(),
-                             ExpiresOn = newSubscription.CurrentPeriodEnd,
-                             CreatedOn = stripeEvent.Created
-                         }
-                     );
-                    return Ok();
                 case Events.CustomerSubscriptionDeleted:
                 case Events.CustomerSubscriptionPaused:
                 case Events.CustomerSubscriptionPendingUpdateApplied:
@@ -162,38 +133,28 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                 case Events.CustomerSubscriptionResumed:
                 case Events.CustomerSubscriptionUpdated:
 
-                    if (stripeEvent.Data.Object is not Stripe.Subscription updatedDescription)
+                    if (stripeEvent.Data.Object is not Stripe.Subscription updatedSubscription)
                     {
                         return BadRequest("failed to cast event");
                     }
-                    if (!updatedDescription.Metadata.TryGetValue("UserId", out var updaterId))
+                    if (!updatedSubscription.Metadata.TryGetValue("UserId", out var updaterId))
                     {
                         return BadRequest("failed to get userid from metadata");
                     }
-                    var lastUpdaterSubscription = await subscriptionRepository.GetLastSubscriptionByUserId(updaterId);
-                    if (lastUpdaterSubscription == null)
-                    {
-                        // create subscription event might not have already been fired, so create the subscription
-                        await subscriptionRepository.AddSubscription(
-                            new Subscription()
-                            {
-                                SubscriptionId = updatedDescription!.Id,
-                                UserId = updaterId!,
-                                CustomerId = updatedDescription.CustomerId,
-                                Status = updatedDescription.Status.ToSubscriptionStatus(),
-                                ExpiresOn = updatedDescription.CurrentPeriodEnd,
-                                CreatedOn = stripeEvent.Created
-                            }
-                        );
-                        return Ok();
-                    }
-                    // instead, just update the subscription
-                    lastUpdaterSubscription.CustomerId = updatedDescription.CustomerId;
-                    lastUpdaterSubscription.Status = updatedDescription.Status.ToSubscriptionStatus();
-                    lastUpdaterSubscription.ExpiresOn = updatedDescription.CurrentPeriodEnd;
-                    lastUpdaterSubscription.CreatedOn = stripeEvent.Created;
-
-                    await subscriptionRepository.UpdateSubscription(lastUpdaterSubscription);
+                    
+                    var service = new SubscriptionService();
+                    var subscription = await service.GetAsync(updatedSubscription.Id);
+                    await subscriptionRepository.UpsertSubscription(
+                        new Subscription()
+                        {
+                            SubscriptionId = subscription!.Id,
+                            UserId = updaterId!,
+                            CustomerId = subscription.CustomerId,
+                            Status = subscription.Status.ToSubscriptionStatus(),
+                            ExpiresOn = subscription.CurrentPeriodEnd,
+                            CreatedOn = stripeEvent.Created
+                        }
+                    );
                     return Ok();
 
                 default:
