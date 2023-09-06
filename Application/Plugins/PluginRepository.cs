@@ -52,7 +52,7 @@ public class PluginRepository : IPluginRepository
             .Include(x => x.Sections)
             .Where(x => x.UserId == userid && !x.isDeleted)
             .ToListAsync(cancellationToken);
-        
+
         foreach (var plugin in entity)
         {
             plugin.Sections = plugin.Sections?.Where(x => !x.isDeleted);
@@ -80,10 +80,9 @@ public class PluginRepository : IPluginRepository
 
     public async Task<bool> HasReachedPluginQuota(string userId)
     {
-        var countTask = Get().CountAsync();
-        var isPremiumTask = subscriptionRepository.IsUserPremium(userId);
-        await Task.WhenAll(countTask, isPremiumTask);
-        return countTask.Result < (isPremiumTask.Result ? 10 : 3);
+        var countTask = await Get().CountAsync();
+        var isPremiumTask = await subscriptionRepository.IsUserPremium(userId);
+        return countTask < (isPremiumTask ? 10 : 3);
     }
     private void CheckPlugin(Plugin entity)
     {
