@@ -1,10 +1,6 @@
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
-// public interface ISubscriptionRepository{
-
-// }
-
 public class SubscriptionRepository
 {
     private readonly AiPluginDbContext context;
@@ -94,24 +90,6 @@ public class SubscriptionRepository
         await context.SaveChangesAsync();
     }
 
-
-    // public async Task CreateOrUpdateSubscription(Subscription SubscriptiontoSearch)
-    // {
-    //     var subscription = await context.Subscriptions.FindAsync(SubscriptiontoSearch.Id);
-    //     if (subscription == null)
-    //     {
-    //         await AddSubscription(SubscriptiontoSearch);
-    //         return;
-    //     }
-
-    //     subscription.CustomerId = SubscriptiontoSearch.CustomerId;
-    //     subscription.Status = SubscriptiontoSearch.Status;
-    //     subscription.ExpiresOn = SubscriptiontoSearch.ExpiresOn;
-
-    //     await UpdateSubscription(subscription);
-    //     return;
-    // }
-
     public async Task<bool> IsUserPremium(string userId)
     {
         var result = await context.Subscriptions         //take the subscriptions
@@ -121,43 +99,4 @@ public class SubscriptionRepository
             .FirstOrDefaultAsync();                           //take the last added
         return result?.Status == SubscriptionStatus.Active;  //and check if it is active
     }
-
-    //#region Checkout
-    //public async Task AddCheckout(Checkout checkout)
-    //{
-    //    ArgumentNullException.ThrowIfNull(checkout);
-    //    await context.Checkouts.AddAsync(checkout);
-    //    await context.SaveChangesAsync();
-    //}
-
-    //public async Task UpdateCheckout(Checkout checkout)
-    //{
-    //    ArgumentNullException.ThrowIfNull(checkout);
-    //    context.Checkouts.Update(checkout);
-    //    await context.SaveChangesAsync();
-    //}
-
-    //public async Task DeleteCheckout(string checkoutId)
-    //{
-    //    ArgumentNullException.ThrowIfNull(checkoutId);
-
-    //    var checkout = await context.Checkouts.FindAsync(checkoutId);
-    //    if (checkout == null)
-    //    {
-    //        throw new KeyNotFoundException(nameof(checkout));
-    //    }
-
-    //    context.Checkouts.Remove(checkout);
-    //    await context.SaveChangesAsync();
-    //}
-
-    //public async Task<Checkout?> GetCheckout(string checkoutId)
-    //{
-    //    return await context.Checkouts
-    //        .Where(c => c.CheckoutSessionId == checkoutId)
-    //        .SingleOrDefaultAsync();
-    //}
-
-    //#endregion
-
 }

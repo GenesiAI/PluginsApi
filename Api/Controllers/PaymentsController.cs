@@ -37,15 +37,6 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
         var options = BuildSessionOptions(userId);
         var session = await new SessionService().CreateAsync(options);
 
-        // save row in checkouts
-        // var checkout = new Checkout
-        // {
-        //     CheckoutSessionId = session.Id,
-        //     UserId = userId,
-        //     Status = CheckoutStatuses.Pending,
-        // };
-        // await subscriptionRepository.AddCheckout(checkout);
-
         // if GET was requested using flag ?automatic=false, return the session id; otherwise redirect to the checkout page
         if (Request.Query.ContainsKey("automatic") && Request.Query["automatic"] == "false")
         {
@@ -102,29 +93,6 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
 
             switch (stripeEvent.Type)
             {
-                //case Events.CheckoutSessionExpired:
-                //    // if the checkout session has expired, mark the checkout as expired
-
-                //    var checkout = await GetCheckoutFromEvent(stripeEvent);
-                //    if (checkout == null)
-                //    {
-                //        return BadRequest();
-                //    }
-                //    checkout.Status = CheckoutStatuses.Failed;
-                //    await subscriptionRepository.UpdateCheckout(checkout);
-                //    return Ok();    // return a 200 response so that Stripe doesn't retry the webhook
-
-                //case Events.CheckoutSessionCompleted:
-
-                //    var completedCheckout = await GetCheckoutFromEvent(stripeEvent);
-                //    if (completedCheckout == null)
-                //    {
-                //        return BadRequest();
-                //    }
-                //    completedCheckout.Status = CheckoutStatuses.Success;
-                //    await subscriptionRepository.UpdateCheckout(completedCheckout);
-                //    return Ok();
-
                 case Events.CustomerSubscriptionDeleted:
                 case Events.CustomerSubscriptionPaused:
                 case Events.CustomerSubscriptionPendingUpdateApplied:
@@ -173,22 +141,7 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
             throw;
         }
     }
-    // private async Task<Checkout?> GetCheckoutFromEvent(Event stripeEvent)
-    // {
-    //     var session = stripeEvent.Data.Object as Session;
-    //     if (session?.Id == null)
-    //     {
-    //         logger.LogError("CheckoutSessionExpired: sessionToDelete.Id is null");
-    //         return null;
-    //     }
-    //     var checkout = await subscriptionRepository.GetCheckout(session.Id);
-    //     if (checkout == null)
-    //     {
-    //         logger.LogError($"CheckoutSessionExpired: checkoutToDelete is null for session {session.Id}");
-    //         return null;
-    //     }
-    //     return checkout;
-    // }
+    
     private SessionCreateOptions BuildSessionOptions(string userId)
     {
         // var lastSubscription = await subscriptionRepository.GetLastSubscriptionByUserId(userId);
