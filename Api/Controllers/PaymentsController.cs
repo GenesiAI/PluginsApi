@@ -54,6 +54,39 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
         return Ok(session.Url);
     }
 
+
+    /// <summary>
+    /// This endpoint is called by Frontend to unsubscribe a user, it simply tells stripe to mark the subscription as canceled
+    /// So that the user can still use the premium features until the end of the billing period, but as soon as the billing period ends
+    /// the webhook will be called and the subscription will be marked as canceled
+    /// </summary>
+    [Authorize]
+    [HttpPost("unsubscribe")]
+    public async Task<IActionResult> Unsubscribe()
+    {
+        var userId = GetUserId();
+        logger.LogTrace($"Unsubscribing user {userId}");
+        StripeConfiguration.ApiKey = stripeSettings.ApiKey;
+
+        var isPremium = await subscriptionRepository.IsUserPremium(userId);
+        if (!isPremium)
+        {
+            return BadRequest("User is not premium");
+        }
+
+        var lastSubscription = await subscriptionRepository.GetLastSubscriptionByUserId(userId);
+        if (lastSubscription == null)
+        {
+            return BadRequest("User has no subscription");
+        }
+
+        var options = new SubscriptionUpdateOptions { CancelAtPeriodEnd = true };
+        var service = new SubscriptionService();
+        service.Update(lastSubscription.SubscriptionId, options);
+
+        return Ok();
+    }
+
     /// <summary>
     /// This endpoint is called by Stripe to send events
     /// </summary>
@@ -93,6 +126,34 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                 //    return Ok();
 
                 case Events.CustomerSubscriptionCreated:
+                    if (stripeEvent.Data.Object is not Stripe.Subscription newSubscription)
+                    {
+                        return BadRequest("failed to cast event");
+                    }
+                    if (!newSubscription.Metadata.TryGetValue("UserId", out var creatorId))
+                    {
+                        return BadRequest("failed to get userid from metadata");
+                    }
+
+                    var lastCreatorSubscription = await subscriptionRepository.GetLastSubscriptionByUserId(creatorId);
+                    if (lastCreatorSubscription != null)
+                    {
+                        // if the user already has a subscription, probably the event to activate it was fired before this one, so just ignore this event
+                        return Ok();
+                    }
+
+                    await subscriptionRepository.AddSubscription(
+                         new Subscription()
+                         {
+                             SubscriptionId = newSubscription!.Id,
+                             UserId = creatorId!,
+                             CustomerId = newSubscription.CustomerId,
+                             Status = newSubscription.Status.ToSubscriptionStatus(),
+                             ExpiresOn = newSubscription.CurrentPeriodEnd,
+                             CreatedOn = stripeEvent.Created
+                         }
+                     );
+                    return Ok();
                 case Events.CustomerSubscriptionDeleted:
                 case Events.CustomerSubscriptionPaused:
                 case Events.CustomerSubscriptionPendingUpdateApplied:
@@ -101,33 +162,38 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                 case Events.CustomerSubscriptionResumed:
                 case Events.CustomerSubscriptionUpdated:
 
-                    if (stripeEvent.Data.Object is not Stripe.Subscription subscription)
+                    if (stripeEvent.Data.Object is not Stripe.Subscription updatedDescription)
                     {
                         return BadRequest("failed to cast event");
                     }
-                    if (!subscription.Metadata.TryGetValue("UserId", out var userid))
+                    if (!updatedDescription.Metadata.TryGetValue("UserId", out var updaterId))
                     {
                         return BadRequest("failed to get userid from metadata");
                     }
+                    var lastUpdaterSubscription = await subscriptionRepository.GetLastSubscriptionByUserId(updaterId);
+                    if (lastUpdaterSubscription == null)
+                    {
+                        // create subscription event might not have already been fired, so create the subscription
+                        await subscriptionRepository.AddSubscription(
+                            new Subscription()
+                            {
+                                SubscriptionId = updatedDescription!.Id,
+                                UserId = updaterId!,
+                                CustomerId = updatedDescription.CustomerId,
+                                Status = updatedDescription.Status.ToSubscriptionStatus(),
+                                ExpiresOn = updatedDescription.CurrentPeriodEnd,
+                                CreatedOn = stripeEvent.Created
+                            }
+                        );
+                        return Ok();
+                    }
+                    // instead, just update the subscription
+                    lastUpdaterSubscription.CustomerId = updatedDescription.CustomerId;
+                    lastUpdaterSubscription.Status = updatedDescription.Status.ToSubscriptionStatus();
+                    lastUpdaterSubscription.ExpiresOn = updatedDescription.CurrentPeriodEnd;
+                    lastUpdaterSubscription.CreatedOn = stripeEvent.Created;
 
-                    await subscriptionRepository.AddSubscription(
-                         new Subscription()
-                         {
-                             SubscriptionId = subscription!.Id,
-                             UserId = userid!,
-                             CustomerId = subscription.CustomerId,
-                             Status = subscription.Status.ToSubscriptionStatus(),
-                             ExpiresOn = subscription.CurrentPeriodEnd,
-                             CreatedOn = stripeEvent.Created //todo unix time, need to convert to uct?
-                         }
-                     );
-                    //var subscriptionToUpdate = await subscriptionRepository.GetSubscription(subscription.Id);
-                    //if (subscriptionToUpdate == null)
-                    //{
-                    //    return BadRequest();
-                    //}
-                    //subscriptionToUpdate.Status = subscription.Subscription.Status.ToSubscriptionStatus();
-                    //await subscriptionRepository.UpdateSubscription(subscriptionToUpdate);
+                    await subscriptionRepository.UpdateSubscription(lastUpdaterSubscription);
                     return Ok();
 
                 default:

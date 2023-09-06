@@ -53,23 +53,24 @@ public class SubscriptionRepository
 
         await context.SaveChangesAsync();
     }
-    // public async Task UpdateSubscription(Subscription subscription)
-    // {
-    //     ArgumentNullException.ThrowIfNull(subscription);
-    //     context.Subscriptions.Update(subscription);
+    
+    public async Task UpdateSubscription(Subscription subscription)
+    {
+        ArgumentNullException.ThrowIfNull(subscription);
+        context.Subscriptions.Update(subscription);
 
-    //     var plugins = await context.Plugins
-    //         .Where(p => p.UserId == subscription.UserId)
-    //         .OrderByDescending(p => p.CreationDateTime)
-    //         .AsTracking()
-    //         .ToListAsync();
+        var plugins = await context.Plugins
+            .Where(p => p.UserId == subscription.UserId)
+            .OrderByDescending(p => p.CreationDateTime)
+            .AsTracking()
+            .ToListAsync();
 
-    //     foreach (var plugin in plugins)
-    //     {
-    //         plugin.IsActive = plugins.IndexOf(plugin) < 3 || subscription.Status == SubscriptionStatus.Active;
-    //     }
-    //     await context.SaveChangesAsync();
-    // }
+        foreach (var plugin in plugins)
+        {
+            plugin.IsActive = plugins.IndexOf(plugin) < 3 || subscription.Status == SubscriptionStatus.Active;
+        }
+        await context.SaveChangesAsync();
+    }
 
 
     // public async Task CreateOrUpdateSubscription(Subscription SubscriptiontoSearch)
