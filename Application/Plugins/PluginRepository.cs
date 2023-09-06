@@ -34,7 +34,8 @@ public class PluginRepository : IPluginRepository
         return dbContext
             .Plugins
             .Include(x => x.Sections)
-            .Where(x => !x.isDeleted).AsQueryable();
+            .Where(x => !x.isDeleted)
+            .AsQueryable();
     }
 
     public async Task<Plugin> Get(Guid id, CancellationToken cancellationToken = default)
