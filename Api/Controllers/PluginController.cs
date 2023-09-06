@@ -31,7 +31,7 @@ public class PluginController : ControllerBase
     {
         string userId = GetUserId();
 
-        if (!await pluginRepository.HasReachedPluginQuota(userId))
+        if (await pluginRepository.HasReachedPluginQuota(userId))
             return BadRequest("Max plugins reached");
 
         var plugin = mapper.Map<Plugin>(request);
