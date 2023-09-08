@@ -43,7 +43,7 @@ public class PluginRepository : IPluginRepository
         var entity = await dbContext.Plugins.Include(x => x.Sections).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (entity is null || entity.isDeleted)
             throw new KeyNotFoundException($"Plugin with id {id} not found");
-        entity.Sections = entity.Sections?.Where(x => !x.isDeleted);
+        entity.Sections = entity.Sections?.Where(x => !x.isDeleted).ToList();
         return entity;
     }
 
@@ -83,7 +83,7 @@ public class PluginRepository : IPluginRepository
     {
         var countTask = await Get().CountAsync();
         var isPremiumTask = await subscriptionRepository.IsUserPremium(userId);
-        return countTask < (isPremiumTask ? 10 : 3);
+        return countTask >= (isPremiumTask ? 10 : 3);
     }
     private void CheckPlugin(Plugin entity)
     {
