@@ -131,7 +131,7 @@ public class PluginController : ControllerBase
         {
             var plugin = await pluginRepository.Get(pluginId);
             if (!IsMatchingAuthenticatedUserId(plugin.UserId)) return Unauthorized("User is not authorized to get sections for this plugin");
-            return Ok(plugin.Sections?.Where(s => s.Id == pluginId) ?? new List<Section>());
+            return Ok(plugin.Sections?.Where(s => s.Id == pluginId && !s.isDeleted) ?? new List<Section>());
         }
         catch (KeyNotFoundException)
         {
