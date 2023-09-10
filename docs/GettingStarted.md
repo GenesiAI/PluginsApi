@@ -12,7 +12,7 @@
 So, you wanna run locally the solution with a local databse, to do so you will now create a database in 5 minutes and make your solution use it.
 
 [Download Azure data studio](https://docs.microsoft.com/en-us/sql/azure-data-studio/download-azure-data-studio), and connect to `Server=.;Database=MyDatabase;Trusted_Connection=True;` or 
-_`Server=(LocalDB)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=True`_
+_`Server=(LocalDB)\MSSQLLocalDB; Integrated Security=True; MultipleActiveResultSets=True;User ID=testUser;Password=test;`_
 Welcome to your local sql server   
 First let's bomb security locally so we can allow the sql user from the app access the database, run this query
 ```sql
