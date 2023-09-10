@@ -48,7 +48,7 @@ public class PluginController : ControllerBase
         var plugins = await pluginRepository.GetByUserId(userId);
 
         var result = mapper.Map<PluginsResponse>(plugins);
-        result.MaxPlugins = await subscriptionRepository.IsUserPremium(userId) ? 10 : 3;
+        result.MaxPlugins = await subscriptionRepository.IsUserPremium(userId) ? 3 : 1;
         return Ok(result);
     }
 

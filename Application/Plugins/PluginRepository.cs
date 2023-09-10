@@ -29,15 +29,6 @@ public class PluginRepository : IPluginRepository
         return entity;
     }
 
-    public IQueryable<Plugin> Get(CancellationToken cancellationToken = default)
-    {
-        return dbContext
-            .Plugins
-            .Include(x => x.Sections)
-            .Where(x => !x.isDeleted)
-            .AsQueryable();
-    }
-
     public async Task<Plugin> Get(Guid id, CancellationToken cancellationToken = default)
     {
         var entity = await dbContext.Plugins.Include(x => x.Sections).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
@@ -81,9 +72,14 @@ public class PluginRepository : IPluginRepository
 
     public async Task<bool> HasReachedPluginQuota(string userId)
     {
-        var countTask = await Get().CountAsync();
-        var isPremiumTask = await subscriptionRepository.IsUserPremium(userId);
-        return countTask >= (isPremiumTask ? 10 : 3);
+        var isPremium = await subscriptionRepository.IsUserPremium(userId);
+
+        return (await dbContext
+                .Plugins
+                .Include(x => x.Sections)
+                .Where(x => !x.isDeleted)
+                .CountAsync(x => x.UserId == userId)
+                ) >= (isPremium ? 3 : 1);
     }
     private void CheckPlugin(Plugin entity)
     {
