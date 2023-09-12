@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
-    [Migration("20230906180448_Subscriptions dropping column guid")]
-    partial class Subscriptionsdroppingcolumnguid
+    [Migration("20230910234122_Changed the key of subscription")]
+    partial class Changedthekeyofsubscription
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -117,9 +117,8 @@ namespace AiPlugin.Migrations
 
             modelBuilder.Entity("Subscription", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
@@ -133,10 +132,6 @@ namespace AiPlugin.Migrations
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
-
-                    b.Property<string>("SubscriptionId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserId")
                         .IsRequired()

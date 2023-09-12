@@ -35,7 +35,7 @@ public class SubscriptionRepository
     public async Task UpsertSubscription(Subscription subscription)
     {
         ArgumentNullException.ThrowIfNull(subscription);
-        var existingSubscription = await context.Subscriptions.FindAsync(subscription.SubscriptionId);
+        var existingSubscription = await context.Subscriptions.FindAsync(subscription.Id);
         if (existingSubscription == null)
         {
             await AddSubscription(subscription);

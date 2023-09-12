@@ -1,10 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using AiPlugin.Domain.Common;
 
-public partial class Subscription : EntityBase
+public partial class Subscription 
 {
-    [Key]
-    public string SubscriptionId { get; set; } = null!;
+    public string Id { get; set; } = null!;
 
     public string UserId { get; set; } = null!;
 

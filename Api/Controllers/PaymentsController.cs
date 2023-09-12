@@ -18,6 +18,7 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
         this.subscriptionRepository = subscriptionRepository;
         this.stripeSettings = stripeSettings;
         this.frontendUrl = frontendUrl;
+        StripeConfiguration.ApiKey = stripeSettings.ApiKey;
     }
 
     [Authorize]
@@ -26,7 +27,6 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
     {
         var userId = GetUserId();
         logger.LogTrace($"Creating checkout session for user {userId}");
-        StripeConfiguration.ApiKey = stripeSettings.ApiKey;
 
         var isPremium = await subscriptionRepository.IsUserPremium(userId);
         if (isPremium)
@@ -45,19 +45,12 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
         return Ok(session.Url);
     }
 
-
-    /// <summary>
-    /// This endpoint is called by Frontend to unsubscribe a user, it simply tells stripe to mark the subscription as canceled
-    /// So that the user can still use the premium features until the end of the billing period, but as soon as the billing period ends
-    /// the webhook will be called and the subscription will be marked as canceled
-    /// </summary>
     [Authorize]
     [HttpPost("unsubscribe")]
     public async Task<IActionResult> Unsubscribe()
     {
         var userId = GetUserId();
         logger.LogTrace($"Unsubscribing user {userId}");
-        StripeConfiguration.ApiKey = stripeSettings.ApiKey;
 
         var isPremium = await subscriptionRepository.IsUserPremium(userId);
         if (!isPremium)
@@ -72,8 +65,7 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
         }
 
         var options = new SubscriptionUpdateOptions { CancelAtPeriodEnd = true };
-        var service = new SubscriptionService();
-        service.Update(lastSubscription.SubscriptionId, options);
+        new SubscriptionService().Update(lastSubscription.Id, options);
 
         return Ok();
     }
@@ -93,12 +85,13 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
 
             switch (stripeEvent.Type)
             {
-                case Events.CustomerSubscriptionDeleted:
-                case Events.CustomerSubscriptionPaused:
-                case Events.CustomerSubscriptionPendingUpdateApplied:
-                case Events.CustomerSubscriptionPendingUpdateExpired:
-                case Events.CustomerSubscriptionTrialWillEnd:
-                case Events.CustomerSubscriptionResumed:
+                //case Events.CustomerSubscriptionCreated:
+                //case Events.CustomerSubscriptionDeleted:
+                //case Events.CustomerSubscriptionPaused:
+                //case Events.CustomerSubscriptionPendingUpdateApplied:
+                //case Events.CustomerSubscriptionPendingUpdateExpired:
+                //case Events.CustomerSubscriptionTrialWillEnd:
+                //case Events.CustomerSubscriptionResumed:
                 case Events.CustomerSubscriptionUpdated:
 
                     if (stripeEvent.Data.Object is not Stripe.Subscription updatedSubscription)
@@ -109,14 +102,12 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                     {
                         return BadRequest("failed to get userid from metadata");
                     }
-
-                    StripeConfiguration.ApiKey = stripeSettings.ApiKey;
-                    var service = new SubscriptionService();
-                    var subscription = await service.GetAsync(updatedSubscription.Id);
+                    
+                    var subscription = await new SubscriptionService().GetAsync(updatedSubscription.Id);
                     await subscriptionRepository.UpsertSubscription(
                         new Subscription()
                         {
-                            SubscriptionId = subscription!.Id,
+                            Id = subscription!.Id,
                             UserId = updaterId!,
                             CustomerId = subscription.CustomerId,
                             Status = subscription.Status.ToSubscriptionStatus(),
