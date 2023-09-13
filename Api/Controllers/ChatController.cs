@@ -27,8 +27,6 @@ public class ChatController : AiPlugin.Api.Controllers.ControllerBase
     }
 
 }
-// input: { sections: [{name:"xxx", description: "xxxxxx", content: "ddddddddd"}] , messages: [{ role: 'user', content: 'Say this is a test' }]}
-// output: { message: { role: 'assistant', content: 'This is a test' }, MaxMessagesLast24H: 30, MessagesLast24H: 29}
 
 public class Chat
 {
@@ -41,6 +39,8 @@ public class Message
     public string Role { get; set; } = null!;
     public string Content { get; set; } = null!;
 }
-
-
+// Q: write a chat object in json
+// A: {"aiPlugin":{"id":"1","name":"test","description":"test","version":"1.0.0","author":"test","url":"http://localhost:5000","icon":"test","enabled":true},"messages":[{"role":"user","content":"hello"},{"role":"assistant","content":"hello"}]}
+// Q: id is a guid
+// A: 
 
