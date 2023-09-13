@@ -1,4 +1,6 @@
-﻿namespace AiPlugin.Domain.Chat;
+﻿using OpenAI_API.Chat;
+
+namespace AiPlugin.Domain.Chat;
 
 public class Message
 {

@@ -1,4 +1,5 @@
 using AiPlugin.Api.Settings;
+using AiPlugin.Application.OpenAI;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -81,6 +82,7 @@ static void AddServices(WebApplicationBuilder builder, string version)
 
     builder.Services.AddScoped<IPluginRepository, PluginRepository>();
     builder.Services.AddScoped<SubscriptionRepository>();
+    builder.Services.AddScoped<IChatService, ChatService>();
 
     builder.Services.AddAuthentication(options => { options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; })
           .AddJwtBearer(options =>
@@ -111,5 +113,9 @@ void AddConfigrations(WebApplicationBuilder builder)
     builder.Configuration.GetSection("StripeSettings").Bind(stripeSettings);
     builder.Services.AddSingleton(stripeSettings);
 
-    builder.Services.AddSingleton(x => x.GetRequiredService<IConfiguration>().GetValue<string>("FrontendDomain")!);
+    var gptSettings = new GPTSettings();
+    builder.Configuration.GetSection("GPTSettings").Bind(gptSettings);
+    builder.Services.AddSingleton(gptSettings);
+
+    builder.Services.AddSingleton(x => x.GetRequiredService<IConfiguration>().GetValue<string>("FrontendDomain")!); //make this an obj
 }
