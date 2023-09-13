@@ -28,6 +28,7 @@ public class ChatController : AiPlugin.Api.Controllers.ControllerBase
 
 }
 
+//todo move from here to dto/domain 
 public class Chat
 {
     public Plugin AiPlugin { get; set; } = null!;
@@ -39,8 +40,3 @@ public class Message
     public string Role { get; set; } = null!;
     public string Content { get; set; } = null!;
 }
-// Q: write a chat object in json
-// A: {"aiPlugin":{"id":"1","name":"test","description":"test","version":"1.0.0","author":"test","url":"http://localhost:5000","icon":"test","enabled":true},"messages":[{"role":"user","content":"hello"},{"role":"assistant","content":"hello"}]}
-// Q: id is a guid
-// A: 
-

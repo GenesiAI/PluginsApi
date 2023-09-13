@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.AddConsole();
 
-var version = "1.2.6"; // unsubscribe endpoint added
+var version = "1.2.7"; // chat
 AddServices(builder, version);
 AddConfigrations(builder);
 

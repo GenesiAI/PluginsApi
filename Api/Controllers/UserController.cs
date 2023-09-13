@@ -22,6 +22,6 @@ public class UserController : ControllerBase
     {
 
         var isPremium = await subscriptionRepository.IsUserPremium(GetUserId());
-        return new UserInfo() { IsPremium = isPremium };
+        return new UserInfo() { IsPremium = isPremium , ChatData = new ChatData()};
     }
 }
