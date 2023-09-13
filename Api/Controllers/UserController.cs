@@ -1,7 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using AiPlugin.Infrastructure;
+﻿using AiPlugin.Api.Dto;
 using Microsoft.AspNetCore.Authorization;
-using AiPlugin.Api.Dto;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -22,6 +21,6 @@ public class UserController : ControllerBase
     {
 
         var isPremium = await subscriptionRepository.IsUserPremium(GetUserId());
-        return new UserInfo() { IsPremium = isPremium , ChatData = new ChatData()};
+        return new UserInfo() { IsPremium = isPremium, ChatData = new ChatData() };
     }
 }
