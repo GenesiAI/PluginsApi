@@ -10,12 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OpenAI" Version="1.7.2" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Domain\Domain.csproj" />
     <ProjectReference Include="..\Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\OpenAI-API-dotnet\OpenAI_API\OpenAI_API.csproj" />
   </ItemGroup>
 
 </Project>
