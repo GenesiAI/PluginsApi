@@ -1,25 +1,28 @@
-using AiPlugin.Application.Plugins;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+
 namespace AiPlugin.Application.Plugins;
 
 public class PluginRepository : IPluginRepository
 {
     private readonly AiPluginDbContext dbContext;
     private readonly SubscriptionRepository subscriptionRepository;
+    private readonly AdminWhitelist adminWhitelist;
 
-    public PluginRepository(AiPluginDbContext dbContext, SubscriptionRepository subscriptionRepository)
+    public PluginRepository(AiPluginDbContext dbContext, SubscriptionRepository subscriptionRepository, AdminWhitelist adminWhitelist)
     {
         this.dbContext = dbContext;
         this.subscriptionRepository = subscriptionRepository;
+        this.adminWhitelist = adminWhitelist;
     }
 
-    public async Task<Plugin> Add(Plugin entity, string userId, CancellationToken cancellationToken = default)
+    public async Task<Plugin> Add(Plugin entity, string userId, ClaimsPrincipal? user = null, CancellationToken cancellationToken = default)
     {
         CheckPlugin(entity);
-        if (await HasReachedPluginQuota(userId))
+        if (await HasReachedPluginQuota(userId, user))
         {
             throw new Exception("Max plugins reached");
         }
@@ -70,8 +73,14 @@ public class PluginRepository : IPluginRepository
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<bool> HasReachedPluginQuota(string userId)
+    public async Task<bool> HasReachedPluginQuota(string userId, ClaimsPrincipal? user = null)
     {
+        var userEmail = user?.FindFirst(ClaimTypes.Email)?.ToString();
+        if (userEmail != null && adminWhitelist.Contains(userEmail))
+        {
+            return false;
+        }
+
         var isPremium = await subscriptionRepository.IsUserPremium(userId);
 
         return (await dbContext

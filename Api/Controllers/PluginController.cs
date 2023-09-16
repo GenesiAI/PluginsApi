@@ -31,12 +31,12 @@ public class PluginController : ControllerBase
     {
         string userId = GetUserId();
 
-        if (await pluginRepository.HasReachedPluginQuota(userId))
+        if (await pluginRepository.HasReachedPluginQuota(userId,User))
             return BadRequest("Max plugins reached");
 
         var plugin = mapper.Map<Plugin>(request);
         plugin.UserId = userId;
-        var createdPlugin = await pluginRepository.Add(plugin, userId);
+        var createdPlugin = await pluginRepository.Add(plugin, userId,User);
 
         return CreatedAtAction(nameof(CreatePlugin), new { userId = createdPlugin.UserId, pluginId = createdPlugin.Id }, createdPlugin);
     }
