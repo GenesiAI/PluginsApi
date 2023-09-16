@@ -75,20 +75,28 @@ public class PluginRepository : IPluginRepository
 
     public async Task<bool> HasReachedPluginQuota(string userId, ClaimsPrincipal? user = null)
     {
-        var userEmail = user?.FindFirst(ClaimTypes.Email)?.ToString();
+        var userEmail = user?.FindFirst(ClaimTypes.Email)?.Value;
         if (userEmail != null && adminWhitelist.Contains(userEmail))
         {
             return false;
         }
-
-        var isPremium = await subscriptionRepository.IsUserPremium(userId);
-
+      
         return (await dbContext
                 .Plugins
                 .Include(x => x.Sections)
                 .Where(x => !x.isDeleted)
                 .CountAsync(x => x.UserId == userId)
-                ) >= (isPremium ? 3 : 1);
+                ) >= await maxPlugins(userId,user);
+    }
+    public async Task<int> maxPlugins(string userId, ClaimsPrincipal? user = null)
+    {
+        var userEmail = user?.FindFirst(ClaimTypes.Email)?.Value;
+        if (userEmail != null && adminWhitelist.Contains(userEmail))
+        {
+            return 10000;
+        }
+        var isPremium = await subscriptionRepository.IsUserPremium(userId);
+        return isPremium ? 3 : 1;
     }
     private void CheckPlugin(Plugin entity)
     {
