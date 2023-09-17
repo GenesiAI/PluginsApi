@@ -19,10 +19,10 @@ public class PluginRepository : IPluginRepository
         this.adminWhitelist = adminWhitelist;
     }
 
-    public async Task<Plugin> Add(Plugin entity, string userId, ClaimsPrincipal? user = null, CancellationToken cancellationToken = default)
+    public async Task<Plugin> Add(Plugin entity, ClaimsPrincipal user, CancellationToken cancellationToken = default)
     {
         CheckPlugin(entity);
-        if (await HasReachedPluginQuota(userId, user))
+        if (await HasReachedPluginQuota(user))
         {
             throw new Exception("Max plugins reached");
         }
@@ -73,20 +73,21 @@ public class PluginRepository : IPluginRepository
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<bool> HasReachedPluginQuota(string userId, ClaimsPrincipal? user = null)
+    public async Task<bool> HasReachedPluginQuota(ClaimsPrincipal user)
     {
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("UserId not found");
         var userEmail = user?.FindFirst(ClaimTypes.Email)?.Value;
         if (userEmail != null && adminWhitelist.Contains(userEmail))
         {
             return false;
         }
-      
+
         return (await dbContext
                 .Plugins
                 .Include(x => x.Sections)
                 .Where(x => !x.isDeleted)
                 .CountAsync(x => x.UserId == userId)
-                ) >= await maxPlugins(userId,user);
+                ) >= await maxPlugins(userId, user);
     }
     public async Task<int> maxPlugins(string userId, ClaimsPrincipal? user = null)
     {
