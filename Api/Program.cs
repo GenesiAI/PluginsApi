@@ -1,6 +1,7 @@
 using AiPlugin.Api.Settings;
 using AiPlugin.Application.OpenAI;
 using AiPlugin.Application.Plugins;
+using AiPlugin.Application.Users;
 using AiPlugin.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +81,7 @@ static void AddServices(WebApplicationBuilder builder, string version)
     ArgumentNullException.ThrowIfNull(contactUrl);
     builder.Services.AddSingleton(new ContactSetting() { Url = contactUrl });
 
+    builder.Services.AddScoped<UserRepository>();
     builder.Services.AddScoped<IPluginRepository, PluginRepository>();
     builder.Services.AddScoped<SubscriptionRepository>();
     builder.Services.AddScoped<IChatService, ChatService>();

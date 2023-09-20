@@ -1,10 +1,6 @@
-﻿using AiPlugin.Api.Dto;
-using AiPlugin.Api.Dto.User;
-using AiPlugin.Application.Plugins;
+﻿using AiPlugin.Api.Dto.User;
 using AiPlugin.Application.Users;
-using AiPlugin.Domain.Plugin;
 using AiPlugin.Domain.User;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
