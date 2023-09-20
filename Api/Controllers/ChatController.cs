@@ -1,4 +1,5 @@
 ﻿using AiPlugin.Api.Dto;
+using AiPlugin.Api.Dto.User;
 using AiPlugin.Application.OpenAI;
 using AiPlugin.Domain.Chat;
 using Microsoft.AspNetCore.Authorization;

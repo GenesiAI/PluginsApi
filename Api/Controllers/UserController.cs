@@ -1,6 +1,10 @@
 ﻿using AiPlugin.Api.Dto;
 using AiPlugin.Api.Dto.User;
+using AiPlugin.Application.Plugins;
 using AiPlugin.Application.Users;
+using AiPlugin.Domain.Plugin;
+using AiPlugin.Domain.User;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,17 +28,39 @@ public class UserController : ControllerBase
     public async Task<UserInfo> GetUserInfo()
     {
         var isPremium = await subscriptionRepository.IsUserPremium(GetUserId());
-        return new UserInfo() { IsPremium = isPremium, ChatData = new ChatData() };
+        User user = await userRepository.GetUser(GetUserId());
+        return new UserInfo()
+        {
+            Email = user.Email,
+            FirebaseId = user.FirebaseId,
+            IsPremium = isPremium,
+            ChatData = new ChatData(),
+            CreatedAt = user.CreatedAt
+        };
     }
 
     [HttpPost]
-    public async Task<UserInfo> CreateNewUser([FromBody] UserCreateRequest request)
+    public async Task<ActionResult<User>> CreateNewUser([FromBody] UserCreateRequest request)
     {
         // Get userId because, by this point, we should already have the info from the authentication method
         string userId = GetUserId();
+        if (await userRepository.GetUser(userId) != null)
+        {
+            throw new Exception($"There is already a User with id {userId} in the system!");
+        }
 
-        //if()
+        // Definition of new user
+        User user = new User()
+        {
+            Id = new Guid(),
+            UserId = userId,
+            Email = request.Email,
+            FirebaseId = request.FirebaseId,
+            isDeleted = false,
+            CreatedAt = DateTime.UtcNow
+        };
+        User createdUser = await userRepository.AddNewUser(user);
 
-        return new UserInfo();
+        return CreatedAtAction(nameof(CreateNewUser), new { userId = createdUser.UserId }, createdUser);
     }
 }

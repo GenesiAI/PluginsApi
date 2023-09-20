@@ -8,7 +8,7 @@ public class UserInfo
     /// <summary>
     /// UserId that we get from the authentication method
     /// </summary>
-    public int UserId { get; set; }
+    public string UserId { get; set; }
     /// <summary>
     /// The email the user used to sign up
     /// </summary>

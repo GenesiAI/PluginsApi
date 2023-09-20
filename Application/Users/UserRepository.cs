@@ -19,7 +19,7 @@ namespace AiPlugin.Application.Users
         /// <param name="id">User id</param>
         /// <returns>User Object</returns>
         /// <exception cref="KeyNotFoundException"></exception>
-        private async Task<User> GetUser(string id)
+        public async Task<User> GetUser(string id)
         {
             var user = await dbContext.Users.FindAsync(id);
             if (user is null || user.isDeleted)
@@ -34,12 +34,12 @@ namespace AiPlugin.Application.Users
         /// </summary>
         /// <param name="user">Object that describes the new User</param>
         /// <returns>Task object</returns>
-        private async Task AddNewUser(User user)
+        public async Task<User> AddNewUser(User user)
         {
             ArgumentNullException.ThrowIfNull(user);
             await dbContext.Users.AddAsync(user);
             await dbContext.SaveChangesAsync();
-            return;
+            return user;
         }
 
         /// <summary>
@@ -47,7 +47,7 @@ namespace AiPlugin.Application.Users
         /// </summary>
         /// <param name="user">Object that describes the User</param>
         /// <returns>Task object</returns>
-        private async Task UpdateUser(User user)
+        public async Task UpdateUser(User user)
         {
             ArgumentNullException.ThrowIfNull(user);
             dbContext.Users.Update(user);
