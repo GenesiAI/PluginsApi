@@ -1,4 +1,5 @@
-﻿using AiPlugin.Domain.Chat;
+﻿using AiPlugin.Api.Dto.User;
+using AiPlugin.Domain.Chat;
 
 namespace AiPlugin.Api.Dto;
 public class ChatResponse

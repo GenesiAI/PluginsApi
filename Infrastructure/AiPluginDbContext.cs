@@ -1,4 +1,5 @@
 using AiPlugin.Domain.Plugin;
+using AiPlugin.Domain.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace AiPlugin.Infrastructure
@@ -10,6 +11,7 @@ namespace AiPlugin.Infrastructure
         }
 
         // Genesi app core tables:
+        public DbSet<User> Users { get; set; } = null!;
         public DbSet<Plugin> Plugins { get; set; } = null!;
         public DbSet<Section> Sections { get; set; } = null!;
 
