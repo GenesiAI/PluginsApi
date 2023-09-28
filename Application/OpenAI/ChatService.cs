@@ -22,8 +22,7 @@ public class ChatService : IChatService
         var api = new OpenAIAPI(gPTSettings.ApiKey);
         var chat = api.Chat.CreateConversation();
 
-        //todo the plugin part
-        chat.AppendSystemMessage("You reply the user like a smart assistant");
+
         foreach (var message in rawChat.Messages)
         {
             switch (message.Role)
@@ -31,16 +30,19 @@ public class ChatService : IChatService
                 case "user":
                     chat.AppendUserInput(message.Content);
                     break;
-                
+
                 case "assistant":
                     chat.AppendExampleChatbotOutput(message.Content);
                     break;
-                
+
                 default:
                     throw new InvalidOperationException("You can't do that");
                     break;
             }
         }
+
+        //chat.AppendSystemMessage("You can request the usage of a function by typing ");
+
         return new Message() { Content = await chat.GetResponseFromChatbotAsync(), Role = ChatMessageRole.Assistant };
     }
 }
