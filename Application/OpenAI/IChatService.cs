@@ -4,6 +4,6 @@ namespace AiPlugin.Application.OpenAI;
 
 public interface IChatService
 {
-    public Task<Message> ReplyChatGPT(Chat rawChat);
+    public Task<Message> ReplyChatGPT(TestChat rawChat);
 
 }
