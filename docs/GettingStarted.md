@@ -22,7 +22,7 @@ EXEC xp_instance_regwrite N'HKEY_LOCAL_MACHINE',
 N'Software\Microsoft\MSSQLServer\MSSQLServer', N'LoginMode', REG_DWORD, 2
 GO
 ```
-Create a new database `Create datatabase aiplugin-localdev`
+Create a new database `Create database aiplugin-localdev`
 
 Than let's create a user 
 ```sql
