@@ -3,6 +3,8 @@ using AiPlugin.Api.Dto;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain.Plugin;
 using AutoMapper;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +26,66 @@ public class PluginController : ControllerBase
         this.subscriptionRepository = subscriptionRepository;
         this.pluginRepository = pluginRepository;
         this.mapper = mapper;
+    }
+
+    [HttpGet("auth/setup/{pluginId}")]
+    public async Task SetupAuth(Guid pluginId)
+    {
+        var plugin = await pluginRepository.Get(pluginId);
+        var pathToServiceAccountKey = "C:/Users/cesca/repos/_secrets/genesi-ai-3fae60b65a57.json";
+        GoogleCredential credential = GoogleCredential.FromFile(pathToServiceAccountKey)
+            .CreateScoped("https://www.googleapis.com/auth/firebase");
+        string token = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
+        Console.WriteLine(token);
+
+        string projectId = "genesi-ai";
+
+        HttpClient client = new HttpClient();
+        client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+        // Fetch existing web apps
+        HttpResponseMessage listResponse = await client.GetAsync($"https://firebase.googleapis.com/v1beta1/projects/{projectId}/webApps");
+        string listResponseBody = await listResponse.Content.ReadAsStringAsync();
+        Console.WriteLine($"List response: {listResponseBody}");
+
+        // Parse JSON to check if app with displayName = pluginId.ToString() exists
+        dynamic apps = Newtonsoft.Json.JsonConvert.DeserializeObject(listResponseBody);
+        Console.WriteLine($"Apps: {apps}");
+        bool appExists = false;
+
+        foreach (var app in apps.apps)
+        {
+            if (app.displayName == pluginId.ToString())
+            {
+                appExists = true;
+                break;
+            }
+        }
+
+        if (appExists)
+        {
+            Console.WriteLine($"App with displayName {pluginId} already exists.");
+            return;
+        }
+            
+        var payload = new
+        {
+            displayName = pluginId.ToString(),
+        };
+
+        StringContent content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(payload), System.Text.Encoding.UTF8, "application/json");
+
+        HttpResponseMessage response = await client.PostAsync($"https://firebase.googleapis.com/v1beta1/projects/{projectId}/webApps", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            string responseBody = await response.Content.ReadAsStringAsync();
+            Console.WriteLine($"Success: {responseBody}");
+        }
+        else
+        {
+            Console.WriteLine($"Failed: {response.StatusCode}");
+        }
     }
 
     [HttpPost]
