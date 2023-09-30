@@ -1,4 +1,9 @@
+using System;
+using System.Data;
 using System.Net;
+using System.Reflection.Metadata.Ecma335;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using AiPlugin.Api.Dto;
 using AiPlugin.Application.Plugins;
 using AiPlugin.Domain.Plugin;
@@ -8,6 +13,7 @@ using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace AiPlugin.Api.Controllers;
 
@@ -29,63 +35,164 @@ public class PluginController : ControllerBase
     }
 
     [HttpGet("auth/setup/{pluginId}")]
-    public async Task SetupAuth(Guid pluginId)
+    public async Task<AppAuth> SetupAuth(Guid pluginId)
     {
         var plugin = await pluginRepository.Get(pluginId);
-        var pathToServiceAccountKey = "C:/Users/cesca/repos/_secrets/genesi-ai-3fae60b65a57.json";
+        var app = await AddApp(plugin);
+        return new AppAuth()
+        {
+            PluginId = pluginId,
+            AppId = app.AppId,
+            AppSecret = app.ApiKeyId
+        };
+    }
+
+    private async Task<App> AddApp(Plugin plugin)
+    {
+        HttpClient client = await GetFirebaseAdminClient();
+        var apps = await GetApps(client);
+
+        var stringPluginId = plugin.Id.ToString();
+        var appsThatMatchName = apps.Where(x => String.Compare(x.DisplayName, stringPluginId, true) == 0);
+        if (appsThatMatchName.Any())
+            throw new Exception($"App with name {stringPluginId} already exists");
+
+        var newApp = new App()
+        {
+            DisplayName = stringPluginId
+        };
+        await CreateFirebaseApp(client, newApp);
+
+        return await GetApp(client, stringPluginId) ?? throw new Exception($"App with name {stringPluginId} not found after creation");
+    }
+
+    private async Task CreateFirebaseApp(HttpClient client, App newApp)
+    {
+        var json = JsonSerializer.Serialize(new { displayName = newApp.DisplayName });
+        var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        HttpResponseMessage response = await client.PostAsync($"https://firebase.googleapis.com/v1beta1/projects/genesi-ai/webApps", content);
+        if (!response.IsSuccessStatusCode)
+            throw new Exception($"Failed to create app: {response.StatusCode} - {await response.Content.ReadAsStringAsync()}");
+
+        var operation = await response.Content.ReadFromJsonAsync<Operation>();
+        if (operation == null)
+            throw new Exception($"Operation is null");
+
+        await WaitOperationSuccess(client, operation.Name);
+    }
+
+    private static async Task<IEnumerable<App>> GetApps(HttpClient client)
+    {
+        HttpResponseMessage listResponse = await client.GetAsync("https://firebase.googleapis.com/v1beta1/projects/genesi-ai/webApps");
+        var apps = await listResponse.Content.ReadFromJsonAsync<AppsList>();
+        return apps?.Apps ?? new List<App>();
+    }
+
+    private static async Task<App?> GetApp(HttpClient client, string displayName)
+    {
+        HttpResponseMessage listResponse = await client.GetAsync("https://firebase.googleapis.com/v1beta1/projects/genesi-ai/webApps");
+        var apps = await listResponse.Content.ReadFromJsonAsync<AppsList>();
+        return apps?.Apps.SingleOrDefault(x => String.Compare(x.DisplayName, displayName, true) == 0);
+    }
+
+    private static async Task<HttpClient> GetFirebaseAdminClient()
+    {
+        var pathToServiceAccountKey = Path.Combine(Directory.GetCurrentDirectory(), "FirebaseDoNotShareKeys.json");
         GoogleCredential credential = GoogleCredential.FromFile(pathToServiceAccountKey)
             .CreateScoped("https://www.googleapis.com/auth/firebase");
         string token = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
         Console.WriteLine(token);
-
-        string projectId = "genesi-ai";
-
         HttpClient client = new HttpClient();
         client.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+        return client;
+    }
 
-        // Fetch existing web apps
-        HttpResponseMessage listResponse = await client.GetAsync($"https://firebase.googleapis.com/v1beta1/projects/{projectId}/webApps");
-        string listResponseBody = await listResponse.Content.ReadAsStringAsync();
-        Console.WriteLine($"List response: {listResponseBody}");
+    // try to get positive or negative operation results for 1min from the operation
+    private async Task WaitOperationSuccess(HttpClient client, string name)
+    {
+        //name is like  workflows/MDU5MTdhNjQtYjBiNi00MzJiLWI3MDQtMGYwNDBlOGZiZDY1"
+        //target url GET https://firebase.googleapis.com/v1beta1/{name=operations/**}
 
-        // Parse JSON to check if app with displayName = pluginId.ToString() exists
-        dynamic apps = Newtonsoft.Json.JsonConvert.DeserializeObject(listResponseBody);
-        Console.WriteLine($"Apps: {apps}");
-        bool appExists = false;
-
-        foreach (var app in apps.apps)
+        for (int i = 0; i < 60; i++)
         {
-            if (app.displayName == pluginId.ToString())
+            HttpResponseMessage response = await client.GetAsync($"https://firebase.googleapis.com/v1beta1/{name}");
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"Failed to get operation: {response.StatusCode}");
+
+            var operation = await response.Content.ReadFromJsonAsync<Operation>(
+                );
+            if (operation == null)
+                throw new Exception($"Operation is null");
+
+            if (operation.Done)
             {
-                appExists = true;
-                break;
+                if (operation.Error != null)
+                    throw new Exception($"Operation failed: {operation.Error}");
+                return;
+            }
+            else
+            {
+                await Task.Delay(1000);
             }
         }
+        throw new Exception($"Operation timeout");
+    }
+    // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse);
 
-        if (appExists)
-        {
-            Console.WriteLine($"App with displayName {pluginId} already exists.");
-            return;
-        }
-            
-        var payload = new
-        {
-            displayName = pluginId.ToString(),
-        };
+    public class AppsList
+    {
+        [JsonPropertyName("apps")]
+        public List<App> Apps { get; set; }
+    }
 
-        StringContent content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(payload), System.Text.Encoding.UTF8, "application/json");
+    public class App
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
 
-        HttpResponseMessage response = await client.PostAsync($"https://firebase.googleapis.com/v1beta1/projects/{projectId}/webApps", content);
+        [JsonPropertyName("appId")]
+        public string AppId { get; set; }
 
-        if (response.IsSuccessStatusCode)
-        {
-            string responseBody = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"Success: {responseBody}");
-        }
-        else
-        {
-            Console.WriteLine($"Failed: {response.StatusCode}");
-        }
+        [JsonPropertyName("displayName")]
+        public string DisplayName { get; set; }
+
+        [JsonPropertyName("projectId")]
+        public string ProjectId { get; set; }
+
+        [JsonPropertyName("webId")]
+        public string? WebId { get; set; }
+
+        [JsonPropertyName("apiKeyId")]
+        public string ApiKeyId { get; set; }
+
+        [JsonPropertyName("state")]
+        public string State { get; set; }
+
+        [JsonPropertyName("expireTime")]
+        public DateTime ExpireTime { get; set; }
+
+        [JsonPropertyName("etag")]
+        public string Etag { get; set; }
+    }
+
+
+    public class Operation
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = null!;
+
+        [JsonPropertyName("metadata")]
+        public object Metadata { get; set; } = null!;
+
+        [JsonPropertyName("done")]
+        public bool Done { get; set; }
+
+        [JsonPropertyName("error")]
+        public object Error { get; set; } = null!;
+
+        [JsonPropertyName("response")]
+        public object Response { get; set; } = null!;
+
     }
 
     [HttpPost]
@@ -260,5 +367,12 @@ public class PluginController : ControllerBase
         {
             return NotFound();
         }
+    }
+
+    public class AppAuth
+    {
+        public Guid PluginId { get; set; }
+        public string AppId { get; set; } = null!;
+        public string AppSecret { get; set; } = null!;
     }
 }
