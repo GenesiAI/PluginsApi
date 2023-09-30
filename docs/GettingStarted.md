@@ -7,6 +7,13 @@
 - [Azure Data Studio](https://docs.microsoft.com/en-us/sql/azure-data-studio/download-azure-data-studio)
 - [Migration tool](https://docs.microsoft.com/en-us/ef/core/cli/dotnet)
 
+### Add external beta library
+
+We are using a library that is not yet on nuget, so we need to add it manually to the solution.
+```
+git submodule add https://github.com/GenesiAI/OpenAI-API-dotnet
+```
+
 ### Create the local environment
 
 So, you wanna run locally the solution with a local databse, to do so you will now create a database in 5 minutes and make your solution use it.
