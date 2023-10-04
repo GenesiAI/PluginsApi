@@ -144,7 +144,8 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                             CustomerId = subscription.CustomerId,
                             Status = subscription.Status.ToSubscriptionStatus(),
                             ExpiresOn = subscription.CurrentPeriodEnd,
-                            CreatedOn = stripeEvent.Created
+                            CreatedOn = stripeEvent.Created,
+                            CancelAtPeriodEnd = subscription.CancelAtPeriodEnd
                         }
                     );
                     return Ok();

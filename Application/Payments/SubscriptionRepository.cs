@@ -99,4 +99,24 @@ public class SubscriptionRepository
             .FirstOrDefaultAsync();                           //take the last added
         return result?.Status == SubscriptionStatus.Active;  //and check if it is active
     }
+
+    public async Task<DateTime?> GetExpireDate(string userId)
+    {
+        var result = await context.Subscriptions         //take the subscriptions
+            .Where(s => s.UserId == userId          //of the user
+                && s.ExpiresOn > DateTime.UtcNow)   //that are not expired
+            .OrderByDescending(s => s.CreatedOn)
+            .FirstOrDefaultAsync();                           //take the last added
+        return result?.ExpiresOn;
+    }
+
+    public async Task<bool?> IsAutoRenewActive(string userId)
+    {
+        var result = await context.Subscriptions         //take the subscriptions
+            .Where(s => s.UserId == userId          //of the user
+                && s.ExpiresOn > DateTime.UtcNow)   //that are not expired
+            .OrderByDescending(s => s.CreatedOn)
+            .FirstOrDefaultAsync();                           //take the last added
+        return !(result?.CancelAtPeriodEnd ?? false);
+    }
 }

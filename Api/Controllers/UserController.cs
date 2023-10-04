@@ -21,6 +21,13 @@ public class UserController : ControllerBase
     {
 
         var isPremium = await subscriptionRepository.IsUserPremium(GetUserId());
-        return new UserInfo() { IsPremium = isPremium, ChatData = new ChatData() };
+        DateTime? expireDate = await subscriptionRepository.GetExpireDate(GetUserId());
+        bool? isAutoRenewActive = await subscriptionRepository.IsAutoRenewActive(GetUserId());
+        return new UserInfo() {
+            IsPremium = isPremium,
+            ExpireDate = expireDate,
+            IsAutoRenewActive = isAutoRenewActive,
+            ChatData = new ChatData()
+        };
     }
 }
