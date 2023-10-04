@@ -3,6 +3,8 @@
 public class UserInfo
 {
     public bool IsPremium { get; set; }
+    public DateTime? ExpireDate { get; set; }
+    public bool? IsAutoRenewActive { get; set; }
     public ChatData ChatData { get; set; } = null!;
 }
 

@@ -22,6 +22,38 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
     }
 
     [Authorize]
+    [HttpGet("manage")]
+    public async Task<IActionResult> Manage()
+    {
+        var userId = GetUserId();
+        var lastSubscription = await subscriptionRepository.GetLastSubscriptionByUserId(userId);
+        if (lastSubscription == null)
+        {
+            return BadRequest("User has no subscription");
+        }
+
+        string referrer = "";
+        if (Request.Headers.ContainsKey("Referer"))
+        {
+            referrer = Request.Headers["Referer"].ToString();
+        }
+        if (!referrer.StartsWith(frontendUrl)) {
+            referrer = frontendUrl;
+        }
+
+        var service = new Stripe.BillingPortal.SessionService();
+        var options = new Stripe.BillingPortal.SessionCreateOptions
+        {
+            Customer = lastSubscription.CustomerId,
+            ReturnUrl = referrer,
+        };
+        var session = await service.CreateAsync(options);
+        var portalUrl = session.Url;
+
+        return Ok(portalUrl);
+    }
+
+    [Authorize]
     [HttpGet("intent")]
     public async Task<IActionResult> CreateCheckoutSession()
     {
@@ -112,7 +144,8 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
                             CustomerId = subscription.CustomerId,
                             Status = subscription.Status.ToSubscriptionStatus(),
                             ExpiresOn = subscription.CurrentPeriodEnd,
-                            CreatedOn = stripeEvent.Created
+                            CreatedOn = stripeEvent.Created,
+                            CancelAtPeriodEnd = subscription.CancelAtPeriodEnd
                         }
                     );
                     return Ok();

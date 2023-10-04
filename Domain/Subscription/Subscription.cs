@@ -14,4 +14,6 @@ public partial class Subscription
     public DateTime ExpiresOn { get; set; }
 
     public DateTime CreatedOn { get; set; }
+    
+    public bool CancelAtPeriodEnd { get; set; }
 }
