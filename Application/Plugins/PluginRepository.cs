@@ -1,25 +1,28 @@
-using AiPlugin.Application.Plugins;
+using System.Security.Claims;
 using System.Text.RegularExpressions;
 using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+
 namespace AiPlugin.Application.Plugins;
 
 public class PluginRepository : IPluginRepository
 {
     private readonly AiPluginDbContext dbContext;
     private readonly SubscriptionRepository subscriptionRepository;
+    private readonly AdminWhitelist adminWhitelist;
 
-    public PluginRepository(AiPluginDbContext dbContext, SubscriptionRepository subscriptionRepository)
+    public PluginRepository(AiPluginDbContext dbContext, SubscriptionRepository subscriptionRepository, AdminWhitelist adminWhitelist)
     {
         this.dbContext = dbContext;
         this.subscriptionRepository = subscriptionRepository;
+        this.adminWhitelist = adminWhitelist;
     }
 
-    public async Task<Plugin> Add(Plugin entity, string userId, CancellationToken cancellationToken = default)
+    public async Task<Plugin> Add(Plugin entity, ClaimsPrincipal user, CancellationToken cancellationToken = default)
     {
         CheckPlugin(entity);
-        if (await HasReachedPluginQuota(userId))
+        if (await HasReachedPluginQuota(user))
         {
             throw new Exception("Max plugins reached");
         }
@@ -70,16 +73,31 @@ public class PluginRepository : IPluginRepository
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<bool> HasReachedPluginQuota(string userId)
+    public async Task<bool> HasReachedPluginQuota(ClaimsPrincipal user)
     {
-        var isPremium = await subscriptionRepository.IsUserPremium(userId);
+        var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? throw new UnauthorizedAccessException("UserId not found");
+        var userEmail = user?.FindFirst(ClaimTypes.Email)?.Value;
+        if (userEmail != null && adminWhitelist.Contains(userEmail))
+        {
+            return false;
+        }
 
         return (await dbContext
                 .Plugins
                 .Include(x => x.Sections)
                 .Where(x => !x.isDeleted)
                 .CountAsync(x => x.UserId == userId)
-                ) >= (isPremium ? 3 : 1);
+                ) >= await maxPlugins(userId, user);
+    }
+    public async Task<int> maxPlugins(string userId, ClaimsPrincipal? user = null)
+    {
+        var userEmail = user?.FindFirst(ClaimTypes.Email)?.Value;
+        if (userEmail != null && adminWhitelist.Contains(userEmail))
+        {
+            return 10000;
+        }
+        var isPremium = await subscriptionRepository.IsUserPremium(userId);
+        return isPremium ? 3 : 1;
     }
     private void CheckPlugin(Plugin entity)
     {

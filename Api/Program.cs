@@ -79,7 +79,7 @@ static void AddServices(WebApplicationBuilder builder, string version)
     var contactUrl = builder.Configuration.GetValue<string>("ContactLogicApp:Url");
     ArgumentNullException.ThrowIfNull(contactUrl);
     builder.Services.AddSingleton(new ContactSetting() { Url = contactUrl });
-
+    
     builder.Services.AddScoped<IPluginRepository, PluginRepository>();
     builder.Services.AddScoped<SubscriptionRepository>();
     builder.Services.AddScoped<IChatService, ChatService>();
@@ -116,6 +116,13 @@ void AddConfigrations(WebApplicationBuilder builder)
     var gptSettings = new GPTSettings();
     builder.Configuration.GetSection("GPTSettings").Bind(gptSettings);
     builder.Services.AddSingleton(gptSettings);
+    var AdminEmails = builder.Configuration.GetSection("AdminEmail").Get<List<string>>();
+    if (AdminEmails != null)
+    {
+        var adminWhitelist = new AdminWhitelist();
+        adminWhitelist.emails = AdminEmails;
+        builder.Services.AddSingleton(adminWhitelist);
+    }
 
     builder.Services.AddSingleton(x => x.GetRequiredService<IConfiguration>().GetValue<string>("FrontendDomain")!); //make this an obj
 }
