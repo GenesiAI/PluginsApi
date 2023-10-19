@@ -20,32 +20,39 @@ public class UserController : ControllerBase
         this.subscriptionRepository = subscriptionRepository;
     }
 
+    #region Get Methods
+
     [HttpGet]
     public async Task<UserInfo> GetUserInfo()
     {
         var isPremium = await subscriptionRepository.IsUserPremium(GetUserFirebaseId());
         User user = await userRepository.GetUser(GetUserFirebaseId());
-        
+
         if (user is null || user.isDeleted)
         {
             throw new KeyNotFoundException($"User was not found");
         }
-        
+
         return new UserInfo()
         {
             Id = user.Id,
             Email = user.Email,
             IsPremium = isPremium,
+            isPrivacyAccepted = user.isPrivacyAccepted,
             ChatData = new ChatData(),
             CreatedAt = user.CreatedAt
         };
     }
 
+    #endregion
+
+    #region Post Methods
+
     [HttpPost]
     public async Task<ActionResult<User>> CreateNewUser([FromBody] UserCreateRequest request)
     {
         // Get userId because, by this point, we should already have the info from the authentication method
-        string userId = (GetUserFirebaseId());
+        string userId = GetUserFirebaseId();
 
         User user = await userRepository.GetUser(userId);
 
@@ -77,15 +84,37 @@ public class UserController : ControllerBase
             user = await userRepository.AddNewUser(user);
         }
 
-
         return CreatedAtAction(nameof(CreateNewUser), new { userId = user.Id }, user);
     }
+
+    [HttpPost("acceptprivacy")]
+    public async Task<ActionResult<User>> AcceptPrivacyPolicy()
+    {
+        string userId = GetUserFirebaseId();
+
+        User user = await userRepository.GetUser(userId);
+
+        if (user == null)
+        {
+            throw new Exception($"The specified User was not found");
+        }
+
+        user.isPrivacyAccepted = true;
+
+        await userRepository.UpdateUser(user);
+
+        return CreatedAtAction(nameof(AcceptPrivacyPolicy), new { userId = user.Id }, user);
+    }
+
+    #endregion
+
+    #region Delete Methods
 
     [HttpDelete]
     public async Task<ActionResult<User>> DeleteUser()
     {
         // The delete functions doesn't really deleate a user but it activates the flag IsDeleted
-        
+
         User user = await userRepository.GetUser(GetUserFirebaseId());
 
         if (user is null || user.isDeleted)
@@ -99,4 +128,7 @@ public class UserController : ControllerBase
 
         return CreatedAtAction(nameof(DeleteUser), new { user.Id }, user);
     }
+
+    #endregion
+
 }

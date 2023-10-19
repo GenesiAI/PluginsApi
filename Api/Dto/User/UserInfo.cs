@@ -18,6 +18,10 @@ public class UserInfo
     /// </summary>
     public bool IsPremium { get; set; }
     /// <summary>
+    /// Flag that gives shows that the user accepted the privacy policy
+    /// </summary>
+    public bool isPrivacyAccepted { get; set; }
+    /// <summary>
     /// When the user signed up
     /// </summary>
     public DateTime CreatedAt { get; set; }

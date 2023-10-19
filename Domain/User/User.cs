@@ -10,7 +10,8 @@ namespace AiPlugin.Domain.User
 {
     /// <summary>
     /// User entity.
-    /// Each user has an Id, email, firebaseId and datetime of creation
+    /// Each user has an Id (firebaseId), email and datetime of creation.
+    /// And every user has a flag that shows if it has accepted the privacy policy
     /// </summary>
     public class User : IDeleted
     {
@@ -20,6 +21,10 @@ namespace AiPlugin.Domain.User
         [Key]
         public string Id { get; set; } = null!;
         public string Email { get; set; } = null!;
+        /// <summary>
+        /// Flag that gives shows that the user accepted the privacy policy
+        /// </summary>
+        public bool isPrivacyAccepted { get; set; }
         public DateTime CreatedAt { get; set; }
         public bool isDeleted { get; set; }
     }
