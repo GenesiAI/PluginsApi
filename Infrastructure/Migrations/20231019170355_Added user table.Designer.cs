@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AiPlugin.Migrations
 {
     [DbContext(typeof(AiPluginDbContext))]
-    [Migration("20231005174658_Added user table")]
+    [Migration("20231019170355_Added user table")]
     partial class Addedusertable
     {
         /// <inheritdoc />
@@ -117,21 +117,13 @@ namespace AiPlugin.Migrations
 
             modelBuilder.Entity("AiPlugin.Domain.User.User", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("FirebaseId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UserId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

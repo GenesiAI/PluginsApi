@@ -8,12 +8,11 @@ public class UserInfo
     /// <summary>
     /// UserId that we get from the authentication method
     /// </summary>
-    public string UserId { get; set; }
+    public string Id { get; set; } = null!;
     /// <summary>
     /// The email the user used to sign up
     /// </summary>
-    public string Email { get; set; }
-    public int FirebaseId { get; set; }
+    public string Email { get; set; } = null!;
     /// <summary>
     /// Flag indicating if the user is allowed to use the premium features
     /// </summary>

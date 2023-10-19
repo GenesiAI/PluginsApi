@@ -25,7 +25,7 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
     [HttpGet("intent")]
     public async Task<IActionResult> CreateCheckoutSession()
     {
-        var userId = GetUserId();
+        var userId = GetUserFirebaseId();
         logger.LogTrace($"Creating checkout session for user {userId}");
 
         var isPremium = await subscriptionRepository.IsUserPremium(userId);
@@ -49,7 +49,7 @@ public class PaymentsController : AiPlugin.Api.Controllers.ControllerBase
     [HttpPost("unsubscribe")]
     public async Task<IActionResult> Unsubscribe()
     {
-        var userId = GetUserId();
+        var userId = GetUserFirebaseId();
         logger.LogTrace($"Unsubscribing user {userId}");
 
         var isPremium = await subscriptionRepository.IsUserPremium(userId);

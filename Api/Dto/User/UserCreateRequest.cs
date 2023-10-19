@@ -5,7 +5,6 @@ namespace AiPlugin.Api.Dto.User
     public class UserCreateRequest
     {
         [StringLength(50)]
-        public string Email { get; set; }
-        public int FirebaseId { get; set; }
+        public string Email { get; set; } = null!;
     }
 }

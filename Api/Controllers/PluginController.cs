@@ -29,7 +29,7 @@ public class PluginController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Plugin>> CreatePlugin([FromBody] PluginCreateRequest request)
     {
-        string userId = GetUserId();
+        string userId = GetUserFirebaseId();
 
         if (await pluginRepository.HasReachedPluginQuota(userId))
             return BadRequest("Max plugins reached");
@@ -44,7 +44,7 @@ public class PluginController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PluginsResponse>> GetPlugins()
     {
-        string userId = GetUserId();
+        string userId = GetUserFirebaseId();
         var plugins = await pluginRepository.GetByUserId(userId);
 
         var result = mapper.Map<PluginsResponse>(plugins);

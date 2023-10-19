@@ -9,7 +9,7 @@ namespace AiPlugin.Api.Controllers
         {
         }
 
-        protected string GetUserId()
+        protected string GetUserFirebaseId()
         {
             var id = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (id != null) return id;
@@ -18,7 +18,7 @@ namespace AiPlugin.Api.Controllers
 
         protected bool IsMatchingAuthenticatedUserId(string userId)
         {
-            return string.Equals(userId, GetUserId(), StringComparison.OrdinalIgnoreCase);
+            return string.Equals(userId, GetUserFirebaseId(), StringComparison.OrdinalIgnoreCase);
         }
     }
 }
