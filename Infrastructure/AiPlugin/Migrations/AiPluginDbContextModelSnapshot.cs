@@ -17,7 +17,7 @@ namespace AiPlugin.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.9")
+                .HasAnnotation("ProductVersion", "7.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -76,6 +76,39 @@ namespace AiPlugin.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Plugins");
+                });
+
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.PluginWhitelist", b =>
+                {
+                    b.Property<Guid>("PluginId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("isDeleted")
+                        .HasColumnType("bit");
+
+                    b.HasKey("PluginId", "Email");
+
+                    b.HasIndex("Email");
+
+                    b.ToTable("PluginWhitelists");
+                });
+
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.PluginWhitelistedUser", b =>
+                {
+                    b.Property<string>("Email")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("isDeleted")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Email");
+
+                    b.ToTable("PluginWhitelistedUser");
                 });
 
             modelBuilder.Entity("AiPlugin.Domain.Plugin.Section", b =>
@@ -144,6 +177,25 @@ namespace AiPlugin.Migrations
                     b.ToTable("Subscriptions");
                 });
 
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.PluginWhitelist", b =>
+                {
+                    b.HasOne("AiPlugin.Domain.Plugin.PluginWhitelistedUser", "PluginWhitelistedUser")
+                        .WithMany("PluginWhitelists")
+                        .HasForeignKey("Email")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AiPlugin.Domain.Plugin.Plugin", "Plugin")
+                        .WithMany("PluginWhitelists")
+                        .HasForeignKey("PluginId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Plugin");
+
+                    b.Navigation("PluginWhitelistedUser");
+                });
+
             modelBuilder.Entity("AiPlugin.Domain.Plugin.Section", b =>
                 {
                     b.HasOne("AiPlugin.Domain.Plugin.Plugin", null)
@@ -155,7 +207,14 @@ namespace AiPlugin.Migrations
 
             modelBuilder.Entity("AiPlugin.Domain.Plugin.Plugin", b =>
                 {
+                    b.Navigation("PluginWhitelists");
+
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("AiPlugin.Domain.Plugin.PluginWhitelistedUser", b =>
+                {
+                    b.Navigation("PluginWhitelists");
                 });
 #pragma warning restore 612, 618
         }

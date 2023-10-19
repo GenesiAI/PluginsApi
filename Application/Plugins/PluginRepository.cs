@@ -1,4 +1,3 @@
-using AiPlugin.Application.Plugins;
 using System.Text.RegularExpressions;
 using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
@@ -34,30 +33,30 @@ public class PluginRepository : IPluginRepository
         return dbContext
             .Plugins
             .Include(x => x.Sections)
+            .Include(x => x.PluginWhitelists)
             .Where(x => !x.isDeleted)
             .AsQueryable();
     }
 
     public async Task<Plugin> Get(Guid id, CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.Plugins.Include(x => x.Sections).SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var entity = await dbContext.Plugins.Include(x => x.Sections)
+            .Include(x => x.PluginWhitelists)
+            .SingleOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (entity is null || entity.isDeleted)
             throw new KeyNotFoundException($"Plugin with id {id} not found");
         entity.Sections = entity.Sections?.Where(x => !x.isDeleted);
         return entity;
     }
 
+
     public async Task<IEnumerable<Plugin>> GetByUserId(string userid, CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.Plugins
-            .Include(x => x.Sections)
-            .Where(x => x.UserId == userid && !x.isDeleted)
-            .ToListAsync(cancellationToken);
+        var entity = await dbContext.Plugins.Include(x => x.Sections)
+            .Include(x => x.PluginWhitelists)
+            .Where(x => x.UserId == userid && !x.isDeleted).ToListAsync(cancellationToken);
 
-        foreach (var plugin in entity)
-        {
-            plugin.Sections = plugin.Sections?.Where(x => !x.isDeleted);
-        }
+        foreach (var plugin in entity) { plugin.Sections = plugin.Sections?.Where(x => !x.isDeleted); }
         return entity;
     }
 

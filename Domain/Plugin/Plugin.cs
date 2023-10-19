@@ -9,6 +9,7 @@ namespace AiPlugin.Domain.Plugin
         public bool IsActive { get; set; }
         public string UserId { get; set; } = null!;
         public virtual IEnumerable<Section>? Sections { get; set; } = null!;
+        public virtual IEnumerable<PluginWhitelist>? PluginWhitelists { get; set; } = null!;
 
         [MaxLength(20)]
         public string NameForHuman { get; set; } = null!;

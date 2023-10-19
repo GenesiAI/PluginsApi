@@ -1,7 +1,5 @@
-using AiPlugin.Api.Controllers;
 using AiPlugin.Api.Settings;
 using AiPlugin.Application.Plugins;
-using AiPlugin.Domain.Plugin;
 using AiPlugin.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -77,12 +75,15 @@ static void AddServices(WebApplicationBuilder builder, string version)
         });
     });
 
-var contactUrl = builder.Configuration.GetValue<string>("ContactLogicApp:Url");
-ArgumentNullException.ThrowIfNull(contactUrl);
-builder.Services.AddSingleton(new ContactSetting() { Url = contactUrl });
+    var contactUrl = builder.Configuration.GetValue<string>("ContactLogicApp:Url");
+    ArgumentNullException.ThrowIfNull(contactUrl);
+    builder.Services.AddSingleton(new ContactSetting() { Url = contactUrl });
 
     builder.Services.AddScoped<IPluginRepository, PluginRepository>();
     builder.Services.AddScoped<SubscriptionRepository>();
+    builder.Services.AddScoped<PluginWhitelistedUserRepository>();
+    builder.Services.AddScoped<PluginWhitelistRepository>();
+    builder.Services.AddScoped<PluginRepository>();
 
     builder.Services.AddAuthentication(options => { options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme; })
           .AddJwtBearer(options =>
